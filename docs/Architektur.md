@@ -107,29 +107,30 @@ Dieses Dokument definiert eine **umsetzbare Zielarchitektur** für SASD-Chess. E
 
 ### 3.2 Abhängigkeitsgraph
 
+**Lesekonvention:** Ein Pfeil `A → B` bedeutet: `A` darf `B` **verwenden** bzw. mit `B` gelinkt werden; `B` darf deswegen **nicht** automatisch `A` importieren. Der Graph ist azyklisch und in CMake überprüfbar.
+
 ~~~text
-C++ Standardbibliothek
-         |
-     chess-core
-       |   |
-       |   +--> chess-game
-       |             |
-       +-------------+------> chess-search ---> chess-uci-host ---> UCI-Engine-EXE
-       |             |               |
-       +-------------+----> chess-formats
-       |                            |
-       +--> chess-diagnostics ------+----> chess-benchmark
-                                               |
-  chess-process --> chess-uci-client           +--> chess-laboratory
-                        |                           ^   |
-                        +--> chess-match -----------+   |
-                                  |                     |
-                                  +--> chess-application<+
-                                            |
-                                        chess-desktop
+chess-desktop ───────────→ chess-application
+                                │
+               ┌────────────────┼────────────────┐
+               ▼                ▼                ▼
+          chess-game       chess-search       chess-match
+               │                │                │
+               ▼                ├──────→ chess-diagnostics
+          chess-core            ├──────→ chess-game
+                                └──────→ chess-core
+
+chess-formats ───────────→ chess-game, chess-core
+chess-uci-protocol ──────→ (Standardbibliothek; ggf. chess-formats)
+chess-uci-host ──────────→ chess-uci-protocol, chess-search, chess-game, chess-formats
+chess-process ───────────→ (Standardbibliothek + OS-Adapter)
+chess-uci-client ────────→ chess-uci-protocol, chess-process
+chess-match ─────────────→ chess-game, chess-formats, chess-uci-client
+chess-benchmark ─────────→ chess-core, chess-search, chess-diagnostics
+chess-laboratory ────────→ chess-benchmark, chess-match, chess-formats
 ~~~
 
-*Das Diagramm zeigt eine mögliche Richtung; die Abhängigkeitspfeile werden durch CMake-Zielverknüpfungen überprüft. Eine abstrakte Vertragsbibliothek darf nur eingeführt werden, wenn eine reale zyklische oder anderweitig unauflösbare Abhängigkeit entsteht. Nicht jedes Interface braucht ein eigenes Projekt.*
+**Struktur statt Framework:** Der Graph benennt fachliche Zuständigkeiten. In frühen Meilensteinen dürfen kleine Module zunächst als wenige Bibliotheken umgesetzt werden, sofern Abhängigkeitsrichtung, Testbarkeit und mögliche spätere Trennung erhalten bleiben. Eine abstrakte Vertragsbibliothek ist nur bei einem **konkreten** Abhängigkeitsproblem gerechtfertigt.
 
 ### 3.3 Architekturregeln für Reviews
 
@@ -709,6 +710,18 @@ Die Struktur ist **Zielstruktur**, kein Anspruch, dass alle Ordner jetzt schon e
 
 **Testcode ist Produktcode.** Jeder Bugfix für ein Regel-/Protokollproblem enthält nach Möglichkeit zuerst einen reproduzierbaren Regressionstest.
 
+### 14.4 CMake-Targetregeln und Einbindung in Tests
+
+Die CMake-Zielstruktur soll keine implizite Build-Abhängigkeit von der Desktop-GUI erzeugen:
+
+- **Headless Basis:** `chess-core`, `chess-game`, `chess-formats`, `chess-search` und Tests sind unabhängig von einem GUI-Framework buildbar.
+- **Eigenständige Programme:** `sasd-chess-uci` und `sasd-chess-match` müssen jeweils direkt und ohne Desktop gestartet werden können; `sasd-chess-desktop` linkt nur anwendungsseitige Verträge.
+- **Optionalität:** `SASD_CHESS_BUILD_DESKTOP`, `SASD_CHESS_BUILD_TESTS` und `SASD_CHESS_BUILD_BENCHMARKS` (Namen als Vorschlag) sollen die gewünschten Buildteile steuern, ohne unbeteiligte Bibliotheken zu verändern.
+- **Compiler:** C++20, Warnungen, mindestens Debug/Release, Linux GCC/Clang und Windows MSVC. Externe Abhängigkeiten müssen reproduzierbar versioniert und lizenzrechtlich überprüft sein.
+- **Testbetrieb:** Kurze deterministische Unit-/Protokoll-/Perft-Tests laufen regulär in CTest. Lange Perft- und Matchserien werden separat markiert, damit die CI verlässlich bleibt. Keine Netzwerkabhängigkeit der Tests.
+
+**M0-Architekturgate:** Konfigurierbarer CMake-Build von Core, Test-Harness und trivialem CLI funktioniert ohne UI-Bibliotheken auf den verpflichtenden Plattformen. Alle installierten Header gehören zu ihrem fachlichen Target; zyklische CMake-Abhängigkeiten oder Betriebssystem-Header im Core sind ein M0-Fehler.
+
 ## 15. Testarchitektur und Definition of Done
 
 ### 15.1 Testpyramide
@@ -756,6 +769,46 @@ Die Struktur ist **Zielstruktur**, kein Anspruch, dass alle Ordner jetzt schon e
 - **LH-N-001–020:** Qualität, Portabilität, Sicherheit, Messung und Betrieb; Review- und CI-Nachweise.
 
 *LH-F-031 wurde im Lastenheft zurückgezogen und darf nicht für einen anderen Zweck wiederverwendet werden.*
+
+### 15.4 Minimales fachliches M1-Vertragspaket
+
+Der erste umzusetzende Schachkern sollte eine **kleine, zusammenhängende vertikale Scheibe** bilden, statt sofort sämtliche Module mit leeren Klassen anzulegen. Vorgeschlagene fachliche API-Schritte:
+
+1. `Square`, `Color`, `PieceType`, `Piece` als geprüfte Werttypen definieren.
+2. `Position::initial()` und eine lesbare Feldsicht liefern.
+3. Angriffserkennung und Pseudo-Legalzugerzeugung implementieren.
+4. `legal_moves(position)` mit Königssicherheitsprüfung anbieten.
+5. `make_legal_move` und `unmake_move` mit vollständigen `UndoState`-Invarianten implementieren.
+6. `perft(position, depth)` und `divide(position, depth)` ohne GUI/Engine verfügbar machen.
+7. Ausgewählte Sonderstellungen und mindestens Anfangsstellungs-Referenzwerte in CTest aufnehmen.
+
+**Beispielhafter C++20-Vertrag**, keine verbindliche Header- oder ABI-Festlegung:
+
+~~~cpp
+namespace sasd::chess::core {
+
+struct Position;
+struct Move;
+struct UndoState;
+
+// Returns only moves that preserve the mover's king safety.
+// Neither the input position nor its history is mutated.
+[[nodiscard]] std::vector<Move> legal_moves(const Position& position);
+
+// Precondition: move has been validated for this exact position.
+// Postcondition: undo_move restores the complete original state.
+[[nodiscard]] UndoState make_legal_move(Position& position, Move move);
+void undo_move(Position& position, Move move, const UndoState& previous);
+
+// Perft(depth == 0) == 1; all descendants count only legal moves.
+[[nodiscard]] std::uint64_t perft(Position position, unsigned depth);
+
+} // namespace sasd::chess::core
+~~~
+
+**Unabdingbare Tests:** Prüfung der Wertbereiche, Test von Positionen mit Königsschach, Rochade, En passant einschließlich aufgedeckter Königslinie und allen vier Umwandlungen; Undo-Identität nach Spezialzügen; Divide-Summe gleich Perft; keine Königs-Schläge; sinnvolle Begrenzung von Rekursion und Zählerüberläufen. Keine Meldung „M1 fertig“, solange der verpflichtende Regelkorpus abweicht.
+
+**Nachweiskette:** `LH-F-001–005` + `LH-F-051` → `chess-core` → CTest `core`/`perft`/`divide` → reproduzierbarer CI-Lauf. Aspekte von Partiehistorie und Remis werden erst mit `chess-game` vervollständigt und in M2 separat abgenommen.
 
 ## 16. Architekturentscheidungen und offene Punkte
 
@@ -837,5 +890,6 @@ Für den Stand 1.0 werden **nicht** eingeführt: Microservices, Netzwerkruntime,
 | Version | Datum | Änderung |
 | --- | --- | --- |
 | **0.1** | **27.10.2026** | Erstes zusammenhängendes deutsches Architekturkonzept mit Schachdomäne, Bibliotheksgrenzen, Such- und UCI-Lebenszyklen, Match-Schiedsrichter, UI, Laboratory, Qualitätsgates und ADR-Vorbereitung. |
+| **0.2** | **27.10.2026** | Abhängigkeitsgraph mit expliziter Richtung, technische Modul-/Ownership-Verträge, Remisansprüche und Matchreglement, UCI-Antwortkorrelation, Zeit-/Fehlerprioritäten, Buildregeln und konkrete M0/M1-Architekturgates ergänzt. |
 
 **Freigabepunkt vor Implementierungsbeginn:** Die Kernprinzipien und der M0/M1-Schnitt werden fachlich/technisch geprüft. Toolchain-/Testframework-/GUI-/Lizenzentscheidungen erfolgen in abgegrenzten ADRs, nicht durch unbemerkte Festlegungen in Implementierungsdetails.
