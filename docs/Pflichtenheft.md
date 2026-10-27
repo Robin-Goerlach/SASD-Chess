@@ -264,15 +264,27 @@ In einer neuen Partie müssen z. B. für die Stellungswiederholung relevante Inf
 - Engine A / Engine B über ausführbare Datei + optionale Startargumente auswählbar.
 - Farbe und je Engine mindestens ein Tiefen- oder festes Zeitlimit konfigurierbar.
 - Automatische Partie bis zum Ende **ohne menschliches Klicken pro Zug**.
-- Start, Abbruch und sichtbarer Status; vollständige Zugliste und PGN-Export.
+- Start, Abbruch und sichtbarer Status über eine **ohne Desktop-GUI nutzbare Kommandozeilenschnittstelle**; vollständige Zugliste und PGN-Export.
 - Zwei gleichzeitig laufende Kopien **derselben** SASD-Engine sind zulässig.
 - Laufzeit-/Protokollfehler führen zu einem nachvollziehbar beendeten oder abgebrochenen Match.
 
-**Soll (LH-F-039/LH-F-040):** Serien mit N Partien, Farbwechsel pro Partie, Zufalls-Seed/Eröffnungsvorgaben, Inkrement-Schachuhr, CSV-/JSON-Zusammenfassung (Siege/Remis/Niederlagen, mittlere Zugzahl, Zeitverbrauch), headless CLI, optionale grafische Live-Ansicht und pausierbare Wiedergabe.
+**Soll (LH-F-039/LH-F-040):** Serien mit N Partien, Farbwechsel pro Partie, Zufalls-Seed/Eröffnungsvorgaben, Inkrement-Schachuhr, CSV-/JSON-Zusammenfassung (Siege/Remis/Niederlagen, mittlere Zugzahl, Zeitverbrauch), optionale grafische Live-Ansicht und pausierbare Wiedergabe.
 
 **Kann:** Parallele Multi-Match-Ausführung mit Ressourcenbudget, Elo/SPRT-Auswertung, engineübergreifende Leistungsdiagramme.
 
-### 8.4 Beispielkonfiguration (Entwurf, noch keine implementierte Syntax)
+### 8.4 Beispielhafter CLI-Aufruf (Entwurf, noch nicht implementiert)
+
+```shell
+# Zwei getrennte Prozesse derselben Schach-Engine:
+sasd-chess-match --white ./sasd-chess-engine --black ./sasd-chess-engine --depth 6 --pgn selfplay.pgn
+
+# Gegen eine andere UCI-konforme Schach-Engine:
+sasd-chess-match --white ./sasd-chess-engine --black ./other-uci-engine --movetime 1000 --pgn vs-other.pgn
+```
+
+Das sind **geplante**, noch nicht verfügbare Optionen. Die Match-CLI steuert zwei Prozesse und prüft die Zugfolge zentral; die Engines kommunizieren nicht direkt miteinander. Pfade werden ausdrücklich als ausführbare Dateien behandelt und nicht per Shell interpretiert.
+
+### 8.5 Beispielkonfiguration (Entwurf, noch keine implementierte Syntax)
 
 ```yaml
 match:
@@ -293,7 +305,7 @@ match:
 
 Die konkrete Syntax und der Kommandozeilen-Aufruf werden erst bei Implementierung verbindlich festgelegt. Diese Beispielkonfiguration ist **keine derzeit verfügbare Funktion**.
 
-### 8.5 Testmatrix für beide UCI-Rollen
+### 8.6 Testmatrix für beide UCI-Rollen
 
 | Test-ID | Versuch | Erwartung |
 | --- | --- | --- |
