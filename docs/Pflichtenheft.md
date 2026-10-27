@@ -1,8 +1,8 @@
 # SASD-Chess – Pflichtenheft
 
-> **Version:** 0.3 · **Status:** technischer Entwurf zur Freigabe · **Datum:** 27.10.2026  
+> **Version:** 0.4 · **Status:** technischer Entwurf zur Freigabe · **Datum:** 27.10.2026  
 > **Zuordnung:** [Lastenheft](Lastenheft.md) · **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
-> **Geltungsbereich:** Standardschach, ausschließlich klassische Such- und Bewertungsalgorithmen, grafische Anwendung, UCI-Schnittstellen und Engine-gegen-Engine-Modus.
+> **Geltungsbereich:** Standardschach, ausschließlich klassische Such- und Bewertungsalgorithmen, grafische Anwendung, UCI-Schnittstellen, Engine-gegen-Engine-Modus sowie schachbezogene Diagnose-, Analyse- und Forschungsfunktionen (Laboratory).
 
 ## 1. Zweck, Status und verbindliche Begriffe
 
@@ -65,6 +65,9 @@ Der **Schachkern** ist in beiden Betriebsarten derselbe. Die Match-Verwaltung ka
 | `chess-match` | Zwei Spieler zuweisen, Partieabwicklung, Uhren, Ergebnis, Abbruch | Schachregeln duplizieren |
 | `chess-ui` | Brett, Menüs, Zugliste, Partie- und Matchsteuerung | Direkte Regel-/Engine-Implementierung |
 | `chess-cli` | Headless-Optionen für Engine, Tests und automatisierte Matches | GUI zur Laufzeit zwingend benötigen |
+| `chess-diagnostics` | Optionale Zähler, Bewertungsaufschlüsselung und begrenzte Suchtraces | Schachregelwerk ändern oder zwingend im Normalmodus aufzeichnen |
+| `chess-bench` | Vordefinierte Testsätze, Benchmarks, Laufmetadaten, Vergleichsläufe | Messergebnisse ohne Suchparameter oder Engine-Version erzeugen |
+| `chess-lab` | Stellungslabor, Experimentdefinitionen, aggregierte Vergleiche, Berichte | Separate, inkompatible Engine-/Matchlogik unterhalten |
 
 Abhängigkeiten verlaufen von UI/CLI, Match und Engine **zum Core**, niemals umgekehrt. Engine und Match werden über klar definierte Schnittstellen und Datentransferobjekte gekoppelt. Keine RTTI- oder konkrete GUI-Abhängigkeit im Core erforderlich.
 
@@ -132,6 +135,22 @@ Die eigene klassische Engine nutzt `Negamax` mit `Alpha-Beta-Pruning`, iterative
 - Später: Multi-PV, Eröffnungsbücher, Syzygy-Endspieltabellen, verbesserte klassische Positionsbewertung und reproduzierbare, statistische Abstimmung heuristischer Parameter.
 
 Wichtig: Die Engine garantiert **legalen Bestmove**, nicht eine vorab behauptete Elo-Stärke. In einer terminalen Stellung ist der UCI-konforme Nullzug `0000` möglich.
+
+### 5.3 Instrumentierbare Suche und statische Bewertungsanalyse
+
+Die **fachliche Engine-Schnittstelle** liefert ein `SearchResult` mit legalem Bestmove, Suchbewertung und, falls aktiviert, strukturierten Suchstatistiken. Die Stellungsbewertung bekommt optional eine **eigene strukturierte Aufschlüsselung** (`EvaluationBreakdown`), welche die einzelnen Terme und ihre Summe in einer festgelegten Perspektive (bevorzugt Weiß, Zentibauern) ausgibt. Diese Summe muss für dieselbe Stellung mit dem intern verwendeten statischen Bewertungswert übereinstimmen; Material-/Positionsmerkmale werden nicht für den Analysemodus ein zweites Mal implementiert.
+
+Die GUI muss klar kennzeichnen, ob eine Zahl **statische Bewertung** oder **Suchergebnis unter einer bestimmten Tiefe/Zeit** ist. Eine statische Zerlegung erklärt **nicht allein**, weshalb die Suche letztendlich einen bestimmten Zug auswählt. Terminale Mattwerte sind gesondert auszuweisen.
+
+Für Untersuchung und Performance sind drei logisch getrennte Diagnoseprofile vorgesehen:
+
+| Profil | Zweck | Implementierungsanforderung |
+| --- | --- | --- |
+| `off` | Normale Partie / Benchmark ohne Trace-Overhead | Keine ausführliche Suchspur; nur für die Engine-Steuerung notwendige Arbeit |
+| `stats` | Aggregierte Zähler und Suchwerte | Knoten, Tiefe, Laufzeit, optional Cutoffs/Hash-Treffer; Kosten klar dokumentiert |
+| `trace` | Begrenzte Suchbaumvisualisierung | Nur gezielt ausgewählte Knoten/Zweige; Maximalzahl, Maximaltiefe und Speicherbudget |
+
+Die Suche besitzt einen optionalen `DiagnosticsSink`- oder gleichwertigen Observer-Adapter; jeder Suchlauf verfügt über eine unverwechselbare Kennung. **Keine unbeschränkten Events pro Suchknoten** in den normalen Engine-Ausgabestrom schreiben. Tracing wird bei Erreichen seiner Limits sauber begrenzt, während die Suche selbst korrekt weiterlaufen kann.
 
 ## 6. UCI-Engine-Schnittstelle – Empfängerseite
 
@@ -363,6 +382,16 @@ Die UI hält einen beobachtbaren, **nicht eigenständig veränderbaren** Blick a
 
 **GUI-Framework:** vorerst offen. Ein Adapter zum separaten SASD-UI-Toolkit kann geprüft werden, ist keine Voraussetzung für die Core-Entwicklung. Windows/Linux sind die ersten verbindlich vorgesehenen Plattformen.
 
+### 11.2 Drei logische Arbeitsbereiche
+
+Die Desktop-Oberfläche trennt die Benutzerabsichten **Spielen**, **Analysieren** und **Laboratory**. Die vollständige Trennung ist ein *Soll* nach LH-F-042; die erste spielbare Version darf sich auf den Spielbereich beschränken. Analyse und Laboratory verwenden schachliche `Position`-Snapshots sowie dieselben Regeln, Suchroutinen, UCI-Adapter und Matchkomponenten wie der Spielbereich.
+
+### 11.3 Stellungslabor (LH-F-043) und Partieanalyse (LH-F-052)
+
+Ein `PositionEditorController` nimmt Feldänderungen, Zugrecht, Rochade-/En-passant-Rechte und FEN-Eingaben zunächst als **Entwurfsstellung** entgegen. Erst nach Format- und Regelkonsistenzprüfung wird daraus ein spielbarer `Position`-Snapshot; unvollständige oder irreguläre Editorstände dürfen nicht versehentlich an die Partieverwaltung übergeben werden. Legale Züge, Angriffsfelder und Spielende stammen aus dem Core.
+
+Ein `GameAnalysisController` lädt PGN über den geplanten Parser (LH-F-027), erstellt die authentische Zugfolge und lässt definierte Positionen über einen `SearchController` bewerten. Pro Analysepunkt werden Stellungsschlüssel/FEN, Engine-Version, Suchlimits, Wert, Hauptvariante und gegebenenfalls Alternativzug gespeichert. Der Verlauf kann als Bewertungskurve dargestellt werden. Ohne PGN-Import gibt es noch keinen vollständigen Partieanalysemodus.
+
 ## 12. Build- und Verzeichnisstruktur
 
 Geplante CMake-Struktur, nicht als bereits vorhandene Dateien zu verstehen:
@@ -383,6 +412,8 @@ SASD-Chess/
 │   ├── engine/
 │   ├── uci/
 │   ├── match/
+│   ├── diagnostics/                  # optionale Statistik und Trace-Sinks
+│   ├── bench/                        # reproduzierbare Messläufe
 │   └── ui/
 ├── apps/
 │   ├── engine-main.cpp                  # separater UCI-Prozess
@@ -394,7 +425,9 @@ SASD-Chess/
 │   ├── formats/
 │   ├── engine/
 │   ├── uci/
-│   └── match/
+│   ├── match/
+│   ├── bench/
+│   └── laboratory/
 ├── docs/
 │   ├── Lastenheft.md
 │   ├── Pflichtenheft.md
@@ -404,6 +437,8 @@ SASD-Chess/
 ```
 
 Die Bibliotheken `chess-core`, `chess-formats`, `chess-engine`, `chess-uci-engine`, `chess-uci-client` und `chess-match` sollen unabhängig von der Desktop-UI baubar und testbar sein. Über CMake/CTest werden Unit-, Integrations-, Perft- und Protokolltests ausgeführt. CI-Matrix zunächst mindestens Linux und Windows, ggf. mit GCC/Clang/MSVC.
+
+**Zusätzliche, erst im Ausbau L1–L3 erforderliche Verzeichnisse** (Strukturvorschlag): `research/experiments/`, `research/datasets/`, `research/results/` und `research/reports/`. Kleine Referenzdatensätze werden versioniert; große Ergebnisdateien können extern abgelegt werden, ohne ihre Metadaten-/Prüfsummenverweise zu verlieren.
 
 ## 13. Qualitätsstrategie und Testpyramide
 
@@ -430,17 +465,37 @@ Die Bibliotheken `chess-core`, `chess-formats`, `chess-engine`, `chess-uci-engin
 | LH-N-001 bis LH-N-015 | CTest/CI, Architekturprüfung, Offline-, Robustheits-, Ressourcen- und Sicherheitsprüfungen |
 | LH-A-01 bis LH-A-16 | Testprotokoll mit exakter Version, Datum, Umgebung und Ergebnis |
 
+### 13.2 Testnachweise für Laboratory-Funktionen
+
+| Prüffall | Voraussetzung | Erwartetes Verhalten |
+| --- | --- | --- |
+| LAB-T-01 – Perft Divide | Referenz-FEN und Tiefe | Summe aller legalen Erstzugzweige = bekanntes Gesamtergebnis, einschließlich Sonderzügen |
+| LAB-T-02 – Bewertungsaufschlüsselung | Gleiche Stellung, Engine-/Konfigurationsversion | Summe der Terme entspricht der intern genutzten statischen Bewertung mit definierter Vorzeichenkonvention |
+| LAB-T-03 – Diagnosestufen | Gleiche Stellung und feste Suchtiefe | Deaktiviertes Tracing erhält die fachliche Zugberechnung; eventuelle Performance-Auswirkungen der Diagnostik werden erfasst |
+| LAB-T-04 – Benchmark | Wiederholte feste Stellungen | Suchdaten, Versionskennung, Suchgrenzen und Hardware-/Compilerangaben soweit verfügbar vollständig |
+| LAB-T-05 – Ablationsvergleich | Einzeln aktivierbare Suchheuristik | Aktiver Schalter und Konfiguration protokolliert; Algorithmus-/Zuglegalitätstests bleiben gültig |
+| LAB-T-06 – Engine-Vergleich | Identische Startpositionen, Farbwechsel | PGN-Ergebnis, Paarzuordnung, Anzahl Partien und Punkte konsistent; Unsicherheit ausgewiesen |
+| LAB-T-07 – Export/Import | Strukturierte Messdatei | Identische Versuchsparameter bleiben nach Round-Trip erhalten; Schema-Version geprüft |
+| LAB-T-08 – Trace-Ressourcen | Niedrige Trace-Grenze | Höchstzahl/-tiefe/-speicher eingehalten; Suche weiterhin korrekt, auch wenn Trace abbricht |
+| LAB-T-09 – PGN-Analyse | Legale Referenz-PGN | Positionen und Annotationen stimmen mit nachgespielten Zügen und Suchgrenzen überein |
+| LAB-T-10 – Berichterstellung | Abgeschlossenes Experiment | Bericht referenziert Konfiguration und Rohdaten, trennt Beobachtung von Schlussfolgerung |
+
+**Release-Gates:** LAB-T-01 ist zusammen mit den bisherigen Perft-Tests **verbindlich für V1.0**. Alle anderen LAB-T-Tests werden jeweils verbindlich **bei Umsetzung** der zugehörigen Soll-/Zukunftsfunktion, jedoch nicht automatisch für die Grundversion 1.0.
+
 ## 14. Entwicklungsetappen und Definition of Done
 
 | Meilenstein | Liefergegenstand | Definition of Done |
 | --- | --- | --- |
 | M0 | Projektbasis, CMake, CTest, CI-Start | Linux-/Windows-Build erfolgreich, Test-Harness lauffähig |
-| M1 | Core, Zugerzeugung, Rücknahme, Partieende | Perft und Sonderregeltests grün |
+| M1 | Core, Zugerzeugung, Rücknahme, Partieende, Perft/Divide | Perft-/Divide-Referenzen und Sonderregeltests grün |
 | M2 | FEN, SAN, PGN, Game Controller | Vollständige Partie mit konsistentem Import/Export |
 | M3 | Klassische Engine, UCI-Engine-Prozess | Legalität, Suchabbruch und UCI-Engine-Tests grün |
 | M4 | UCI-Client, Match-Controller, Selbstspiel | **Zwei SASD-Instanzen** + Fremdengine automatisch getestet |
 | M5 | Desktop-Oberfläche und Bedienung | Mensch/Mensch und Mensch/Engine in der GUI; Engine/Engine mindestens per Match-Controller bedienbar |
-| M6 | Release-Stabilisierung | Pflichtanforderungen nachgewiesen, Doku/CI/Binär-Releases geprüft |
+| M6 | Release-Stabilisierung | Pflichtanforderungen einschließlich Divide nachgewiesen, Doku/CI/Binär-Releases geprüft |
+| L1 | Analysegrundlagen | Stellungslabor, strukturierte Bewertung, Diagnoseprofile, Basis-Benchmark, GUI-Analyseansicht |
+| L2 | Vergleichslabor | Gepaarte Engine-Serien, JSON/CSV-Export, PGN-Partieanalyse, erweiterte Taktikregression |
+| L3 | Wissenschaftlicher Ausbau | Experimentverwaltung, Algorithmus-/Datenstrukturvergleich, begrenzte Suchbaumvisualisierung und Berichtsgenerierung |
 
 Bei jeder Etappe müssen alle betroffenen Tests grün, Dokumentation und Architekturänderungen nachvollziehbar sowie neue Schnittstellen ausreichend kommentiert sein. **Ein Meilenstein gilt nicht durch bloße Codeexistenz als abgeschlossen.**
 
@@ -485,5 +540,91 @@ Bei jeder Etappe müssen alle betroffenen Tests grün, Dokumentation und Archite
 | 0.1 | 27.10.2026 | Technischer Lösungsansatz: Schachkern, Game-Controller, klassische Suche, FEN/SAN/PGN und UCI. |
 | 0.2 | 27.10.2026 | UCI-Client, zwei unabhängige Engine-Prozesse, Match-Controller, Selbstspiel, Fehler-/Zeitkontrollen und Tests konkretisiert. |
 | 0.3 | 27.10.2026 | Geltungsbereich auf klassische Schachsoftware präzisiert; nicht zugehörige technische Ausbaustufen aus dem Lösungsentwurf entfernt. |
+| 0.4 | 27.10.2026 | Laboratory-Architektur, Diagnostik, Stellungslabor, Bewertungsaufschlüsselung, Benchmark- und Experimentdesign, statistische Vergleichspartien, Perft-Divide, Testmatrix und stufenweise Entwicklung ergänzt. |
 
 Jede künftige Änderung an funktionalen Anforderungen erhält eine referenzierbare `LH-F-*`-Kennung beziehungsweise verweist auf bestehende Kennungen, dokumentiert ihre Abnahmewirkung und nennt den technischen Nachweis. Zurückgezogene Kennungen werden nicht anderweitig neu vergeben.
+
+
+## 19. Wissenschaftliches Laboratory – technische Spezifikation (L1–L3)
+
+### 19.1 Zweck, Schnittstellen und Begrenzung
+
+Dieses Modul ist **schachbezogen**. Es verwendet bestehende, dokumentierte Schnittstellen des Chess Core, des Suchcontrollers, des UCI-Match-Controllers sowie der FEN-/PGN-Formatschicht. Es erhält **keine eigene Schachregelimplementierung**, keine allgemeine Datenanalyse-Plattform und keine vom Nutzer versteckt abweichende Spielstrategie. Die klassische Engine bleibt unverändert ohne Trainingsanforderung. Für Batchläufe sind GUI-unabhängige Befehle oder APIs vorzusehen; die GUI ist lediglich Darstellung und Konfiguration.
+
+Logisches Modell:
+
+```text
+   Desktop GUI: Spielen / Analysieren / Laboratory
+                        |
+           Application-/Analysecontroller
+                        |
+           +------------+------------+
+           |            |            |
+        Chess Core    Search      Match Controller
+           |            |            |
+           +------------+------------+
+                        |
+       Mess-/Diagnoseadapter (optional)
+                        |
+           Benchmark-/Experimentdienst
+                        |
+           Ergebnisse und Berichte
+```
+
+**Separation of concerns:** Der Match-Controller bleibt autoritativ für gespielte Züge und Resultate; die Experimentverwaltung darf keine Spielsituation überschreiben. Eine Partie ist eine PGN-Aufzeichnung; ein Forschungslauf enthält zusätzliche Metadaten und Rohwerte. Diese beiden Datenarten sind zu trennen.
+
+### 19.2 Erfassung und Definition der Messgrößen
+
+| Messgröße | Präzise Bedeutung / Hinweis |
+| --- | --- |
+| `elapsed_ms` | Monotone, außerhalb der zu vergleichenden Berechnung gemessene Laufzeit; Messumfang dokumentieren (nur Suche oder inklusive Aufbau/Parsing) |
+| `nodes` | Besuche im definierten Suchbaum; für unterschiedliche Suchverfahren sind verschiedene Knotendefinitionen zu dokumentieren |
+| `nps` | `nodes / elapsed_seconds`, nur bei positiver Laufzeit sinnvoll; kein direkter Spielstärkebeweis |
+| `depth` / `seldepth` | Abgeschlossene Hauptsuchtiefe / maximal erreichte selektive Tiefe, soweit verfügbar |
+| `cutoffs` | Anzahl definierter Alpha-Beta-Abschneideereignisse |
+| `tt_hits` | Treffer im Transposition-Cache; Zählerdefinition dokumentieren |
+| `memory_bytes` | Messart explizit kennzeichnen: Spitzenwert, Prozessspeicher, Cache-Allokation etc. |
+| `score_cp` | Bewertungswert in Zentibauern mit dokumentierter Bezugsperspektive; Mattwerte separat |
+| `principal_variation` | Vollständig legale beste bekannte Zugfolge in UCI-Notation mit eindeutiger Ausgangsstellung |
+
+**Messtechnische Fairness:** Compileroptionen, Optimierungsniveau, CPU-Modell, Stromspar-/Turbomodi und Hintergrundlast können Ergebnisse beeinflussen. Gleiche Suchtiefe ist für algorithmische Knotenzahlen nützlich; gleiche Zeitbudgets sind für praktische Spielstärke sinnvoller. Benchmarks sollen Wiederholungen und robuste deskriptive Werte (z. B. Median/Streuung) unterstützen. Aufwendiges Trace-Logging darf nicht unbemerkt nur bei einer Vergleichsvariante eingeschaltet sein.
+
+### 19.3 Laborversuch und maschinenlesbares Ergebnis
+
+`ExperimentDefinition` (spätere optionale API) enthält mindestens Experiment-ID, Fragestellung, Hypothese, Teststellungs-IDs/FEN-Prüfsummen, Engine-/Git-Version, Build-ID, Varianten und Aktivierung der Heuristiken, Suchlimits, Messwiederholungen sowie bei Engine-Matches Eröffnungs- und Farbtauschplan. `ExperimentResult` enthält Datensatz-/Schema-Version, Start-/Endzeit, Plattform- und CPU-/Compilerkontext, Einzelmessungen, Abbrüche, Rohdatenreferenzen sowie aggregierte Werte. Fehlerhafte oder fehlende Metadaten müssen erkennbar bleiben statt stillschweigend durch erfundene Standardwerte ersetzt zu werden.
+
+**Dateivorschlag:** UTF-8 JSON für vollständige Metadaten und Versuchskonfigurationen, UTF-8 CSV für tabellarische Einzelmessungen, PGN für Partien, Markdown/HTML für Berichte. Die exakten Schemata erhalten Versionsnummern und Konformitätstests. Kleine FEN-Referenzsammlungen werden zusammen mit erwarteten Ergebnissen versioniert. Große Ausgabemengen dürfen außerhalb Git liegen, wenn die Berichte stabile Referenzen/Checksummen enthalten.
+
+**Reproduzierbarkeit ist abgestuft:** Bei fester Tiefe und deterministischem Algorithmus lassen sich Entscheidungen häufig exakt reproduzieren. Laufzeiten unter verschiedenen Systembedingungen und Ergebnisse zeitkontrollierter Matches sind naturgemäß nicht zwangsläufig bitgenau reproduzierbar. Ein Versuch muss diesen Unterschied offenlegen.
+
+### 19.4 Statistik für Vergleichspartien
+
+Die vorhandene UCI-Match-Komponente erhält optional eine `MatchSeriesRunner`-Funktion. Sie plant gepaarte Partien aus denselben Startstellungen mit vertauschten Farben, festen Engine-Binaries/Optionen und vorab definierten Zeitbedingungen. Rohdaten enthalten mindestens Partie-ID, Weiß-/Schwarzzuordnung, Ausgangs-FEN, Resultat, technischen Endgrund, Zugzahl und PGN-Pfad.
+
+Die Auswertung liefert Siege/Remis/Niederlagen, Gesamtpunkte und Stichprobenumfang. Bei ausreichender Datenlage dürfen Konfidenzintervalle und Elo-Schätzungen mit dokumentierter Methodik sowie Unsicherheiten ergänzt werden. Optional und erst im späteren Ausbau: SPRT, gegebenenfalls mit vorab definierten Hypothesen und Fehlerwahrscheinlichkeiten. **Weder Einzelpartien noch kleine Punktunterschiede dürfen automatisch als Beweis einer besseren Engine bezeichnet werden.** Bei ungepaarten Stichproben darf die Software nicht fälschlich eine gepaarte Auswertung suggerieren.
+
+### 19.5 Algorithmus-, Trace- und Repräsentationsvergleich
+
+Bei einem Algorithmusvergleich muss sichergestellt sein, dass (a) derselbe legale Zugvorrat aus dem Core stammt, (b) Vergleichsvarianten unter äquivalenten Suchgrenzen laufen, (c) konfigurierbare Optimierungen tatsächlich ein- und ausschaltbar sind und (d) die methodische Bedeutung von Knotenzahlen und Bewertungen erkennbar bleibt. Bei **exakter** Minimax-/Alpha-Beta-Suche mit gleicher Tiefe und identischer Bewertungsfunktion muss der berechnete Wurzelwert gleich sein; Erweiterungen wie Quiescence Search verändern dagegen die Suchsemantik und dürfen nicht als identischer Suchalgorithmus ausgewertet werden.
+
+Die Suchbaumvisualisierung verwendet begrenzte Ereignissamples bzw. erfasste Teilzweige. Zu jedem Ereignis gehören Suche-ID, Ebene, Zug, Bewertungs-/Alpha-Beta-Daten und gegebenenfalls Abschneidegrund, soweit sinnvoll. Begrenzung nach Ereigniszahl, Tiefe, Laufzeit und Speicher ist Pflicht beim Tracing. Eine alternative Brettrepräsentation erhält denselben Perft-/Divide-/Sonderregeltestkorpus und bleibt hinter derselben Core-API verborgen.
+
+### 19.6 Forschungsberichte und wissenschaftliche Aussagegrenzen
+
+Der spätere `ReportBuilder` erzeugt aus abgeschlossenen Experimenten einen Bericht mit Forschungsfrage/Hypothese, Versionen/Builds/Hardware, Datensätzen, Messmethode, Ergebnissen, Streuung/Unsicherheit, bekannten Einschränkungen und Rohdatenreferenzen. Diagramme enthalten Achsen, Einheiten und nachvollziehbare Werte. Automatische Schlussfolgerungen dürfen **keine Kausalität oder allgemeine Überlegenheit behaupten**, wenn die Versuchsbedingungen diese Aussage nicht stützen.
+
+Das Projekt liefert Methoden und Werkzeuge für experimentelle Informatik, **keine garantierte wissenschaftliche Neuheit**. Eine wissenschaftlich überprüfbare Veröffentlichung setzt eine nachvollziehbare Fragestellung, einen angemessenen Versuchsaufbau, kritische Ergebnisinterpretation und zugängliche Daten/Artefakte voraus.
+
+### 19.7 Entwicklungsgates und Traceability
+
+| Anforderungen | Technisches Modul | Abnahmetests | V1.0-Blockade? |
+| --- | --- | --- | --- |
+| LH-F-051 | `chess-core`, `perft-divide` | LAB-T-01 | **Ja** |
+| LH-F-042–LH-F-044, LH-F-055 | Analysecontroller, EvaluationBreakdown, DiagnosticsSink | LAB-T-02/03 | Nein |
+| LH-F-047, LH-F-056 | BenchmarkRunner, JSON/CSV-Serializer | LAB-T-04/07 | Nein |
+| LH-F-048 | MatchSeriesRunner und Statistikmodul | LAB-T-06 | Nein |
+| LH-F-052, LH-F-053 | PGN-Analyse, Referenzkorpus | LAB-T-09, taktische Regression | Nein |
+| LH-F-045, LH-F-046, LH-F-054 | Tracing, Vergleichsadapter | LAB-T-05/08 | Nein |
+| LH-F-049, LH-F-050 | ExperimentRepository, ReportBuilder | LAB-T-07/10 | Nein |
+
+**Nachweispflicht:** Bei Implementierung einer Zusatzfunktion ist die zugehörige LAB-T-Prüfung verpflichtend. Nicht umgesetzte Soll- und Zukunftsfunktionen werden als *geplant* beschrieben und blockieren die V1.0-Abnahme nicht.
