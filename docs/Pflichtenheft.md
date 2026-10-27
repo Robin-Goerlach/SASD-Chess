@@ -1,12 +1,12 @@
 # SASD-Chess – Pflichtenheft
 
-> **Version:** 0.2 · **Status:** technischer Entwurf zur Freigabe · **Datum:** 27.10.2026  
+> **Version:** 0.3 · **Status:** technischer Entwurf zur Freigabe · **Datum:** 27.10.2026  
 > **Zuordnung:** [Lastenheft](Lastenheft.md) · **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
-> **Geltungsbereich:** Standardschach, klassische Schach-Engine, grafische Anwendung, UCI-Schnittstellen und Engine-gegen-Engine-Modus.
+> **Geltungsbereich:** Standardschach, ausschließlich klassische Such- und Bewertungsalgorithmen, grafische Anwendung, UCI-Schnittstellen und Engine-gegen-Engine-Modus.
 
 ## 1. Zweck, Status und verbindliche Begriffe
 
-Dieses Dokument beschreibt, **wie** die Anforderungen des Lastenhefts technisch umgesetzt und nachgewiesen werden sollen. Es ist eine **geplante Architektur, keine Aussage über bereits implementierte Funktionalität**. Änderungen am Lastenheft haben Vorrang vor technischen Details dieses Entwurfs.
+Dieses Dokument beschreibt, **wie** die Anforderungen des Lastenhefts technisch umgesetzt und nachgewiesen werden sollen. Es ist eine **geplante Architektur, keine Aussage über bereits implementierte Funktionalität**. Änderungen am Lastenheft haben Vorrang vor technischen Details dieses Entwurfs. **SASD-Chess entwickelt ausschließlich ein klassisches Schachprogramm mit deterministischen Regeln, handentworfener Bewertung und algorithmischer Spielbaumsuche**. Eine Ausweitung auf andere Produkte oder Verfahren wird in diesem Repository nicht verfolgt.
 
 - **Muss (M):** erforderlich für Version 1.0.
 - **Soll (S):** angestrebt, aber kein Blocker für eine abgestimmte 1.0-Abnahme.
@@ -129,7 +129,7 @@ Die eigene klassische Engine nutzt `Negamax` mit `Alpha-Beta-Pruning`, iterative
 - Quiescence Search für taktische Ruhe an Blattknoten.
 - Abbruch nach Zeit, Tiefen-/Knotenlimit und externer Anweisung.
 - Strukturierte Suchstatistik: Zeit, Knoten, Suchtiefe, Hauptvariante, Bewertungswert.
-- Später: Multi-PV, Eröffnungsbücher, Syzygy-Endspieltabellen, NN-basierte Bewertung und automatisierte Parameteroptimierung.
+- Später: Multi-PV, Eröffnungsbücher, Syzygy-Endspieltabellen, verbesserte klassische Positionsbewertung und reproduzierbare, statistische Abstimmung heuristischer Parameter.
 
 Wichtig: Die Engine garantiert **legalen Bestmove**, nicht eine vorab behauptete Elo-Stärke. In einer terminalen Stellung ist der UCI-konforme Nullzug `0000` möglich.
 
@@ -476,3 +476,14 @@ Bei jeder Etappe müssen alle betroffenen Tests grün, Dokumentation und Archite
 6. Dokumentations- und Namenskonventionen (beispielsweise deutschsprachige Handbücher und englische C++-Bezeichner/Kommentare).
 
 **Freigabevermerk:** Dieses Pflichtenheft ist ein abgestimmter technischer **Vorschlag** und wird erst nach expliziter Bestätigung des Umfangs zu einer verbindlichen Entwicklungsbaseline.
+
+
+## 18. Versionshistorie und Änderungssteuerung
+
+| Version | Datum | Änderung |
+| --- | --- | --- |
+| 0.1 | 27.10.2026 | Technischer Lösungsansatz: Schachkern, Game-Controller, klassische Suche, FEN/SAN/PGN und UCI. |
+| 0.2 | 27.10.2026 | UCI-Client, zwei unabhängige Engine-Prozesse, Match-Controller, Selbstspiel, Fehler-/Zeitkontrollen und Tests konkretisiert. |
+| 0.3 | 27.10.2026 | Geltungsbereich auf klassische Schachsoftware präzisiert; nicht zugehörige technische Ausbaustufen aus dem Lösungsentwurf entfernt. |
+
+Jede künftige Änderung an funktionalen Anforderungen erhält eine referenzierbare `LH-F-*`-Kennung beziehungsweise verweist auf bestehende Kennungen, dokumentiert ihre Abnahmewirkung und nennt den technischen Nachweis. Zurückgezogene Kennungen werden nicht anderweitig neu vergeben.
