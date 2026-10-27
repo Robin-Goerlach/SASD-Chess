@@ -12,7 +12,14 @@ Die ausführlichen, deutschsprachigen Projektdokumente sind:
 
 - **[Lastenheft](docs/Lastenheft.md)** – fachlicher Bedarf, Zielgruppen, Schachregeln, Funktionen, Qualitätsanforderungen, Muss-/Soll-Priorisierung, Nutzungsszenarien und messbare Abnahmekriterien.
 - **[Pflichtenheft](docs/Pflichtenheft.md)** – technische Umsetzung, C++-Architektur, Datenmodell, Zugerzeugung, klassische Spielstrategie, UCI-Protokoll, Prozesssteuerung, Testmatrix und Meilensteine.
-- **[Architekturdokument](docs/Architektur.md)** – zusammenhängende Zielarchitektur, Modulgrenzen, Daten- und Kontrollflüsse, Lebenszyklen, Schnittstellen, Laboranbindung, Qualitätssicherung und technische Entscheidungen.
+- **[Architekturdokument](docs/Architektur.md)** – zusammenhängende Zielarchitektur, Modulgrenzen, Daten- und Kontrollflüsse, Lebenszyklen, Schnittstellen, Laboratory und technische Entscheidungen.
+- **[Roadmap](ROADMAP.md)** – M0–M6 mit Arbeitspaketen und verbindlichen Abnahme-Gates sowie der gestufte Laboratory-Ausbau L1–L3.
+- **[Agentenanweisungen](AGENTS.md)** – projektweite Entwicklungsregeln für Menschen und Coding Agents; [AGENT.md](AGENT.md) verweist darauf.
+- **[Test- und Abnahmeplan](docs/TESTPLAN.md)** – überprüfbare Anforderungen und Testfälle für Chess Core, UCI, Selbstspiel, GUI und Laboratory.
+- **[Entwicklungs- und Buildhandbuch](docs/DEVELOPMENT.md)** – vorgesehene CMake-/CTest-Abläufe, Windows/Linux und Fehlersuche.
+- **[Mitwirkungsrichtlinien](CONTRIBUTING.md)** – Code-/Review-/Testregeln und Hinweise zum noch offenen Lizenzstatus.
+- **[Änderungsverlauf](CHANGELOG.md)** – tatsächlich dokumentierte Projektänderungen statt ungeprüfter Funktionszusagen.
+- **[ADR-Register](docs/adr/README.md)** – Vorlage und Status für nachprüfbare Architekturentscheidungen.
 
 Lasten- und Pflichtenheft liegen als Entwürfe in **Version 0.4** vor; das vertiefende Architekturdokument als **Version 0.2**. Nicht bestätigte technische Entscheidungen sind ausdrücklich gekennzeichnet. Die Dokumente beschreiben eine **Zielarchitektur** und keinen bereits implementierten Softwarestand.
 
@@ -47,6 +54,8 @@ Die vollständigen Anforderungen stehen im [Lastenheft, Abschnitt 5.4–5.5](doc
 
 ## Entwicklungsschritte
 
+Die Meilensteine und ihr tatsächlicher Status werden in **[ROADMAP.md](ROADMAP.md)** gepflegt. Die folgende Aufzählung ist eine Kurzfassung des geplanten Ablaufs:
+
 1. **M0 – Projektbasis:** CMake, CTest, CI, Coding- und Dokumentationsregeln.
 2. **M1 – Schachkern:** Stellungen, legale Züge, Sonderregeln und Perft-Referenztests.
 3. **M2 – Spielverwaltung:** Zugliste, Remisregeln, FEN, SAN und PGN.
@@ -59,4 +68,4 @@ Das Projekt strebt **C++20** und **CMake** an. Die Auswahl des GUI-Frameworks un
 
 ## Geltungsbereich
 
-Dieses Repository behandelt ausschließlich **SASD-Chess als klassisches Schachprogramm**. Der fachliche und technische Rahmen wird durch die beiden oben verlinkten Dokumente festgelegt.
+Dieses Repository behandelt ausschließlich **SASD-Chess als klassisches Schachprogramm**. Der fachliche und technische Rahmen wird durch Lastenheft, Pflichtenheft und die zugehörigen Architektur- und Entwicklungsdokumente definiert. **Geplante Eigenschaften sind nicht automatisch bereits implementiert oder getestet.**
