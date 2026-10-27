@@ -276,9 +276,10 @@ SASD-Chess soll insbesondere Untersuchungen zu **Suchkomplexität, Abschneideeff
 | M0 – Projektbasis | Repository-Struktur, CMake, Tests, Dokumentationskonventionen | Sauberer, reproduzierbarer Minimalbuild |
 | M1 – Schachkern | Brett, Regeln, Zustandsverwaltung, Perft und Divide | Alle Kern-, Divide- und Spezialregeltests grün |
 | M2 – Partie und Formate | Partieablauf, SAN, FEN, PGN-Export, Rücknahme | Reproduzierbare vollständige Partien |
-| M3 – Klassische Engine | Bewertung, Suche, UCI, Suchabbruch; UCI-Match-Controller für Fremdengine und Selbstspiel | Legalitäts-, Protokoll- und Engine-Match-Tests erfolgreich |
-| M4 – Desktop-Oberfläche | Spielbare Mensch/Mensch- und Mensch/Engine-Modi | End-to-End-Abnahmetests erfolgreich |
-| M5 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Releases | LH-A-01 bis LH-A-17 erfüllt |
+| M3 – Klassische Engine / UCI-Host | Bewertung, Suche, UCI-Engine-Schnittstelle und Suchabbruch | Legalitäts-, Such- und UCI-Host-Tests erfolgreich |
+| M4 – UCI-Client / Match-Controller | Fremdengine anbinden, zwei unabhängige Prozesse, Selbstspiel, UCI-Fehler- und Abbruchbehandlung | Engine-Match- und Protokolltests erfolgreich |
+| M5 – Desktop-Oberfläche | Spielbare Mensch/Mensch- und Mensch/Engine-Modi sowie Match-Ansteuerung | End-to-End-Abnahmetests erfolgreich |
+| M6 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Lizenzprüfung, Releases | LH-A-01 bis LH-A-17 erfüllt |
 | L1 – Analysebasis (nach Bedarf) | Stellungslabor, Bewertungsaufschlüsselung, Diagnoseprofile, Basis-Benchmarks | Analyse erfolgt über dieselbe geprüfte Engine; Messmetadaten vollständig |
 | L2 – Vergleichslabor | Vergleichsserien, Benchmark-Export, erweiterte Taktiktests, Partieanalyse | Statistische Auswertung und Export mit dokumentierten Eingaben reproduzierbar |
 | L3 – Vertieftes Laboratory | Experimentverwaltung, Suchbaumvisualisierung, Algorithmen-/Datenstrukturvergleich und Forschungsberichte | Eingeschränkte Tracegrößen, korrekte Vergleichsmethodik und nachvollziehbare Berichte |
@@ -307,6 +308,8 @@ Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 Jede fachliche Änderung erhält eine dokumentierte Begründung, betroffene **LH-IDs**, Priorität, Auswirkungen auf Architektur/Tests sowie eine Entscheidung. Der Versionsstand des Lastenhefts wird gemeinsam mit dem Pflichtenheft angepasst. Als **Baselines** gelten ausschließlich ausdrücklich freigegebene Versionen.
 
 **Nächster Entscheidungsschritt:** Den als Entwurf vorliegenden 1.0-Umfang samt Muss/Soll-Zuordnung prüfen und anschließend als fachliche Baseline freigeben.
+
+**Architekturbezug:** Die Modulgrenzen und technischen Meilensteine sind in [Architektur.md](Architektur.md) dokumentiert.
 
 
 ### Versionshistorie
