@@ -135,7 +135,7 @@ Wichtig: Die Engine garantiert **legalen Bestmove**, nicht eine vorab behauptete
 
 ## 6. UCI-Engine-Schnittstelle – Empfängerseite
 
-**Abnahmerelevante Anforderungen:** LH-F-024, LH-F-033, LH-F-036 bis LH-F-040, LH-A-08, LH-A-13 bis LH-A-18.
+**Abnahmerelevante Anforderungen:** LH-F-024 und LH-F-033, LH-A-08 sowie LH-A-13 bis LH-A-16.
 
 ### 6.1 Betriebsform
 
@@ -201,7 +201,7 @@ Controller -> Engine: quit
 
 ## 7. UCI-Client / externe Engine-Prozesse
 
-**Abnahmerelevante Anforderungen:** LH-F-034 bis LH-F-040.
+**Abnahmerelevante Anforderungen:** LH-F-033 bis LH-F-040.
 
 ### 7.1 Prozessstart und Handshake
 
@@ -268,7 +268,7 @@ In einer neuen Partie müssen z. B. für die Stellungswiederholung relevante Inf
 - Zwei gleichzeitig laufende Kopien **derselben** SASD-Engine sind zulässig.
 - Laufzeit-/Protokollfehler führen zu einem nachvollziehbar beendeten oder abgebrochenen Match.
 
-**Soll:** Serien mit N Partien, Farbwechsel pro Partie, Zufalls-Seed/Eröffnungsvorgaben, Inkrement-Schachuhr, CSV-/JSON-Zusammenfassung (Siege/Remis/Niederlagen, mittlere Zugzahl, Zeitverbrauch), headless CLI, optionale grafische Live-Ansicht und pausierbare Wiedergabe.
+**Soll (LH-F-039/LH-F-040):** Serien mit N Partien, Farbwechsel pro Partie, Zufalls-Seed/Eröffnungsvorgaben, Inkrement-Schachuhr, CSV-/JSON-Zusammenfassung (Siege/Remis/Niederlagen, mittlere Zugzahl, Zeitverbrauch), headless CLI, optionale grafische Live-Ansicht und pausierbare Wiedergabe.
 
 **Kann:** Parallele Multi-Match-Ausführung mit Ressourcenbudget, Elo/SPRT-Auswertung, engineübergreifende Leistungsdiagramme.
 
@@ -416,7 +416,7 @@ Die Bibliotheken `chess-core`, `chess-formats`, `chess-engine`, `chess-uci-engin
 | LH-F-025 bis LH-F-027 | FEN/SAN/PGN-Parser/Exporter, Round-trip-/Kompatibilitätstests |
 | LH-F-033 bis LH-F-040 | UCI-Client + Match-Controller, PH-UCI-01 bis PH-UCI-14 |
 | LH-N-001 bis LH-N-015 | CTest/CI, Architekturprüfung, Offline-, Robustheits-, Ressourcen- und Sicherheitsprüfungen |
-| LH-A-01 bis LH-A-18 | Testprotokoll mit exakter Version, Datum, Umgebung und Ergebnis |
+| LH-A-01 bis LH-A-16 | Testprotokoll mit exakter Version, Datum, Umgebung und Ergebnis |
 
 ## 14. Entwicklungsetappen und Definition of Done
 
@@ -427,7 +427,7 @@ Die Bibliotheken `chess-core`, `chess-formats`, `chess-engine`, `chess-uci-engin
 | M2 | FEN, SAN, PGN, Game Controller | Vollständige Partie mit konsistentem Import/Export |
 | M3 | Klassische Engine, UCI-Engine-Prozess | Legalität, Suchabbruch und UCI-Engine-Tests grün |
 | M4 | UCI-Client, Match-Controller, Selbstspiel | **Zwei SASD-Instanzen** + Fremdengine automatisch getestet |
-| M5 | Desktop-Oberfläche für alle Pflichtmodi | Mensch/Mensch, Mensch/Engine, Engine/Engine nutzbar |
+| M5 | Desktop-Oberfläche und Bedienung | Mensch/Mensch und Mensch/Engine in der GUI; Engine/Engine mindestens per Match-Controller bedienbar |
 | M6 | Release-Stabilisierung | Pflichtanforderungen nachgewiesen, Doku/CI/Binär-Releases geprüft |
 
 Bei jeder Etappe müssen alle betroffenen Tests grün, Dokumentation und Architekturänderungen nachvollziehbar sowie neue Schnittstellen ausreichend kommentiert sein. **Ein Meilenstein gilt nicht durch bloße Codeexistenz als abgeschlossen.**
