@@ -14,7 +14,7 @@ Die ausführlichen, deutschsprachigen Projektdokumente sind:
 - **[Pflichtenheft](docs/Pflichtenheft.md)** – technische Umsetzung, C++-Architektur, Datenmodell, Zugerzeugung, klassische Spielstrategie, UCI-Protokoll, Prozesssteuerung, Testmatrix und Meilensteine.
 - **[Architekturdokument](docs/Architektur.md)** – zusammenhängende Zielarchitektur, Modulgrenzen, Daten- und Kontrollflüsse, Lebenszyklen, Schnittstellen, Laboranbindung, Qualitätssicherung und technische Entscheidungen.
 
-Beide Dokumente sind Entwürfe zur fachlichen Freigabe (Version 0.3). Nicht bestätigte technische Entscheidungen sind darin entsprechend gekennzeichnet.
+Lasten- und Pflichtenheft liegen als Entwürfe in **Version 0.4** vor; das vertiefende Architekturdokument als **Version 0.2**. Nicht bestätigte technische Entscheidungen sind ausdrücklich gekennzeichnet. Die Dokumente beschreiben eine **Zielarchitektur** und keinen bereits implementierten Softwarestand.
 
 ## Geplante Funktionen
 
