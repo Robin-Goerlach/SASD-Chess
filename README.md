@@ -34,6 +34,16 @@ Eine Engine kommuniziert nicht direkt mit einer zweiten Engine. Ein **separater 
 
 Die Schnittstelle erlaubt insbesondere **SASD-Chess gegen fremde UCI-Engines** und **SASD-Chess gegen SASD-Chess** (zwei gleichzeitig gestartete Prozesse). Der Match-Controller ist auch ohne grafische Oberfläche als Kommandozeilenprogramm vorgesehen.
 
+## Science-Beitrag: SASD-Chess Laboratory (geplant)
+
+Das Projekt soll sich zusätzlich als **schachbezogenes Experimentierwerkzeug für angewandte Informatik** eignen. Ziel ist nicht nur eine spielbare klassische Schach-Engine, sondern die nachvollziehbare Untersuchung von Softwarekorrektheit, Suchalgorithmen, Bewertungsfunktionen und Rechenleistung.
+
+Geplante Bereiche sind **Spielen**, **Analysieren** und **Laboratory**. Technische Funktionen: Perft/Divide, transparente Stellungsbewertung, reproduzierbare Benchmarks, UCI-Vergleichspartien mit statistischer Auswertung, begrenzte Suchtraces, Stellungslabor, Experimentdefinitionen und Forschungsberichte.
+
+**Priorisierung:** Perft/Divide gehört zur 1.0-Qualitätssicherung. Die anderen Analyse- und Forschungsfunktionen sind Soll- oder spätere Ausbaustufen und dürfen die erste spielbare Schachversion nicht blockieren. **Reproduzierbarkeit und transparente Unsicherheiten** haben Vorrang vor unbelegten Aussagen über Suchleistung oder Spielstärke.
+
+Die vollständigen Anforderungen stehen im [Lastenheft, Abschnitt 5.4–5.5](docs/Lastenheft.md), die technische Umsetzung im [Pflichtenheft, Abschnitt 19](docs/Pflichtenheft.md).
+
 ## Entwicklungsschritte
 
 1. **M0 – Projektbasis:** CMake, CTest, CI, Coding- und Dokumentationsregeln.
