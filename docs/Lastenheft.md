@@ -83,11 +83,11 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-F-027 | S | PGN-Import und Fortsetzung einer geladenen Partie. |
 | LH-F-028 | S | Einstellbare Engine-Spielstärke, etwa durch Suchzeit, Tiefe oder bewusst begrenzte Suchleistung. |
 | LH-F-029 | S | Engine-Diagnoseinformationen wie Suchtiefe, untersuchte Knoten, Hauptvariante und Bewertungswert. |
-| LH-F-030 | K | Stellungsanalyse, Variantenbaum, Eröffnungsbuch, Endspieltabellen und Engine-gegen-Engine-Turniermodus. |
-| LH-F-031 | Z | Austauschbare lernende Bewertungsmodelle, trainierbare Engine-Komponenten und systematisches Selbstspiel. |
+| LH-F-030 | K | Stellungsanalyse, Variantenbaum, Eröffnungsbuch, Endspieltabellen sowie erweiterte Engine-Turniere mit Ranglisten oder statistischer Elo-Auswertung. |
+| LH-F-031 | Z | Austauschbare lernende Bewertungsmodelle, trainierbare Engine-Komponenten und automatisiertes Selbstspiel zur Gewinnung von KI-Trainingsdaten (über das bereits für 1.0 geforderte Selbstspiel hinaus). |
 | LH-F-032 | Z | Weitere Brettspiele mittels eines gesonderten generischen Spielkerns; **keine** Voraussetzung für Schach 1.0. |
 | LH-F-033 | M | Eine externe **UCI-konforme** Schach-Engine kann als Gegner über einen gesonderten Prozess eingebunden werden; standardmäßige Ein-/Ausgabe (stdin/stdout) dient als Kommunikationskanal. |
-| LH-F-034 | M | Ein **Match-Controller** (Schiedsrichter) kann zwei voneinander unabhängige UCI-Engine-Prozesse starten und eine Partie zwischen ihnen vollständig leiten. |
+| LH-F-034 | M | Ein **auch ohne Desktop-GUI startbarer Match-Controller (CLI, Schiedsrichter)** kann zwei voneinander unabhängige UCI-Engine-Prozesse starten und eine Partie zwischen ihnen vollständig leiten. |
 | LH-F-035 | M | Der Match-Controller unterstützt ausdrücklich zwei Instanzen **derselben** SASD-Chess-Binärdatei sowie zwei unterschiedliche Engines. Prozesse haben getrennten Zustand; Spielerfarben und Startparameter sind konfigurierbar. |
 | LH-F-036 | M | Der Match-Controller verwaltet einen autoritativen Brettzustand und prüft **jeden** gemeldeten Zug auf Legalität, bevor er ihn übernimmt und der Gegenseite die aktualisierte Stellung übergibt. |
 | LH-F-037 | M | Der Match-Controller kennt feste Suchtiefe und definierte Zeitkontrollen, beendet Spiele korrekt und erkennt Zeitüberschreitung, ungültige Züge, Verbindungs-/Prozessabbruch und Protokollfehler. |
