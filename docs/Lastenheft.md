@@ -1,6 +1,6 @@
 # SASD-Chess – Lastenheft
 
-> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.2 · **Datum:** 27.10.2026  
+> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.3 · **Datum:** 27.10.2026  
 > **Projekt:** SASD-Chess · **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
 > **Sprache:** Deutsch · **Geplanter Produkttyp:** frei verfügbare, lokal nutzbare Schachanwendung mit eigener klassischer Engine
 
@@ -12,7 +12,7 @@ Das Lastenheft beschreibt aus Sicht des Auftraggebers, **was** SASD-Chess leiste
 
 ## 2. Ausgangssituation und Motivation
 
-SASD-Chess soll ein nachvollziehbar aufgebautes C++-Schachprogramm werden, das eine vollständige Schachpartie zwischen Menschen sowie gegen eine **selbst entwickelte klassische Strategie-Engine** ermöglicht. Die Kernfunktionen sollen ohne Cloud, Benutzerkonto, Training einer KI oder Internetverbindung funktionieren. Eine spätere Erweiterung durch lernende Bewertungsverfahren soll möglich sein, ohne das Schachregelwerk neu zu entwickeln.
+SASD-Chess soll ein nachvollziehbar aufgebautes C++-Schachprogramm werden, das vollständige Partien zwischen zwei Menschen, gegen eine **selbst entwickelte klassische Schach-Engine** und zwischen zwei unabhängig gestarteten Schach-Engines ermöglicht. Die Spielstrategie beruht ausschließlich auf explizit programmierten Suchalgorithmen und heuristischen Stellungsbewertungen. Die Kernfunktionen sollen ohne Cloud, Benutzerkonto oder Internetverbindung funktionieren.
 
 Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwicklungsprojekt sein. **Korrektheit, klare Architektur, aussagekräftige Tests und ausführliche Codekommentare haben zunächst Vorrang vor maximaler Performance**.
 
@@ -25,10 +25,10 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-Z-03 | Eigenständiger Computergegner | Eine eigene, deterministisch reproduzierbare klassische Engine wählt legale Züge und erkennt einfache taktische Situationen. |
 | LH-Z-04 | Trennung von Zuständigkeiten | Regeln, Partieablauf, Engine und UI sind getrennt test- und austauschbar. |
 | LH-Z-05 | Portabilität | Grundmodule und Engine lassen sich mindestens unter Linux und Windows bauen und testen. |
-| LH-Z-06 | Offene Weiterentwicklung | Architektur und Dokumentation erlauben spätere zusätzliche Oberflächen, Analysefunktionen und KI-Experimente. |
+| LH-Z-06 | Offene Weiterentwicklung | Architektur und Dokumentation erlauben spätere zusätzliche Oberflächen, Stellungsanalysen und Verbesserungen klassischer Such- und Bewertungsverfahren. |
 | LH-Z-07 | Interoperable Engine-Matches | SASD-Chess kann über UCI sowohl gegen externe Programme als auch gegen eine zweite Instanz der eigenen Engine spielen; ein unabhängiger Match-Controller führt und protokolliert die Partien. |
 
-**Nicht-Ziel für Version 1.0:** eine Elo-Garantie, Spielstärke auf Stockfish-Niveau oder ein selbstlernendes neuronales Schachsystem.
+**Nicht-Ziel für Version 1.0:** eine garantierte Elo-Zahl, Spielstärke auf Stockfish-Niveau oder ein Netzwerkdienst für Onlinepartien. Der Gegenstand dieses Repositories bleibt ausschließlich ein klassisches Schachprogramm.
 
 ## 4. Beteiligte und Zielgruppen
 
@@ -74,7 +74,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 
 | ID | Prio | Anforderung und überprüfbares Ergebnis |
 | --- | :--: | --- |
-| LH-F-021 | M | Eine eigene **klassische Engine ohne Lernpflicht** berechnet aus einer legalen Stellung einen legalen Zug. |
+| LH-F-021 | M | Eine eigenständig entwickelte **klassische Engine mit regelbasierten Such- und Bewertungsalgorithmen** berechnet aus einer legalen Stellung einen legalen Zug. |
 | LH-F-022 | M | Die Engine berücksichtigt mindestens Material und einfache Positionsmerkmale sowie mehrzügige Antwortvarianten. |
 | LH-F-023 | M | Eine Suche lässt sich über Suchtiefe oder zeitliches Budget begrenzen; ein Suchabbruch ist möglich. |
 | LH-F-024 | M | Die Engine stellt eine minimale, interoperable **UCI-Schnittstelle** zur Verfügung, unabhängig von der GUI. |
@@ -84,7 +84,6 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-F-028 | S | Einstellbare Engine-Spielstärke, etwa durch Suchzeit, Tiefe oder bewusst begrenzte Suchleistung. |
 | LH-F-029 | S | Engine-Diagnoseinformationen wie Suchtiefe, untersuchte Knoten, Hauptvariante und Bewertungswert. |
 | LH-F-030 | K | Stellungsanalyse, Variantenbaum, Eröffnungsbuch, Endspieltabellen sowie erweiterte Engine-Turniere mit Ranglisten oder statistischer Elo-Auswertung. |
-| LH-F-031 | Z | Austauschbare lernende Bewertungsmodelle, trainierbare Engine-Komponenten und automatisiertes Selbstspiel zur Gewinnung von KI-Trainingsdaten (über das bereits für 1.0 geforderte Selbstspiel hinaus). |
 | LH-F-032 | Z | Weitere Brettspiele mittels eines gesonderten generischen Spielkerns; **keine** Voraussetzung für Schach 1.0. |
 | LH-F-033 | M | Eine externe **UCI-konforme** Schach-Engine kann als Gegner über einen gesonderten Prozess eingebunden werden; standardmäßige Ein-/Ausgabe (stdin/stdout) dient als Kommunikationskanal. |
 | LH-F-034 | M | Ein **auch ohne Desktop-GUI startbarer Match-Controller (CLI, Schiedsrichter)** kann zwei voneinander unabhängige UCI-Engine-Prozesse starten und eine Partie zwischen ihnen vollständig leiten. |
@@ -113,7 +112,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-N-011 | S | **Performance:** Definierte Benchmarks melden Suchknoten, Laufzeit und Speichervolumen; konkrete Grenzwerte werden erst anhand dokumentierter Referenzhardware festgelegt. |
 | LH-N-012 | M | **Sicherheit/Datenschutz:** Lokale Partien werden nicht ohne ausdrückliche Aktion übertragen; Formateingaben sind begrenzt und robust zu verarbeiten. |
 | LH-N-013 | M | **Build-Reproduzierbarkeit:** Bauen und Testen erfolgen über dokumentierte, weitgehend automatisierbare Schritte. |
-| LH-N-014 | S | **Open Source:** Ein öffentlich nutzbares Lizenzmodell, Contributor-Regeln und Drittanbieter-Lizenzprüfung werden vor der ersten öffentlichen Version verbindlich festgelegt. |
+| LH-N-014 | M | **Open Source:** Vor dem 1.0-Release werden Lizenz, Contributor-Regeln und die rechtmäßige Nutzung sämtlicher Drittanbieter-Komponenten und Figurenassets verbindlich dokumentiert. |
 | LH-N-015 | M | **Prozessisolation:** Zwei gleichzeitig gestartete Engines teilen weder globale Partiestände noch Engine-Speicher; fehlgeschlagene Prozesse blockieren den Match-Controller nicht dauerhaft. |
 
 ## 7. Typische Nutzungsszenarien
@@ -173,7 +172,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 ## 9. Fachliche Randbedingungen und Abgrenzung
 
 1. Regelgrundlage ist das **orthodoxe Standardschach**; Schach960, Märchenschach und abweichende Turnierregeln gehören nicht zu 1.0.
-2. Die Engine wird zunächst **ohne neuronales Netz oder Training** realisiert; spätere KI-Experimente dürfen die saubere Trennung nicht aufheben.
+2. Die Strategie-Engine wird **ausschließlich mit klassischen, explizit programmierten Such- und Bewertungsalgorithmen** entwickelt. Diese Projektgrenze gilt auch für spätere Versionen.
 3. Die Desktop-Oberfläche darf ein separates UI-Toolkit verwenden, die Spielregeln müssen jedoch unabhängig davon bleiben.
 4. Nicht geplant für 1.0: Online-Multiplayer, zentrale Nutzerverwaltung, Cloud-Synchronisierung, Bezahlfunktionen, Anti-Cheat-Plattform, mobile Apps, offizielle Turnierzertifizierung und ELO-Zusagen.
 5. Ein **generischer Brettspielbaukasten** ist ausdrücklich keine Voraussetzung für 1.0, kann aber langfristig separat untersucht werden.
@@ -234,3 +233,12 @@ Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 Jede fachliche Änderung erhält eine dokumentierte Begründung, betroffene **LH-IDs**, Priorität, Auswirkungen auf Architektur/Tests sowie eine Entscheidung. Der Versionsstand des Lastenhefts wird gemeinsam mit dem Pflichtenheft angepasst. Als **Baselines** gelten ausschließlich ausdrücklich freigegebene Versionen.
 
 **Nächster Entscheidungsschritt:** Den als Entwurf vorliegenden 1.0-Umfang samt Muss/Soll-Zuordnung prüfen und anschließend als fachliche Baseline freigeben.
+
+
+### Versionshistorie
+
+| Version | Datum | Änderung |
+| --- | --- | --- |
+| 0.1 | 27.10.2026 | Fachlicher Erstentwurf für Schachkern, Oberfläche und klassische Strategie-Engine. |
+| 0.2 | 27.10.2026 | UCI-Interoperabilität, unabhängiger Match-Controller und Selbstspiel als 1.0-Pflichtumfang konkretisiert. |
+| 0.3 | 27.10.2026 | Projekt strikt auf klassische Schachsoftware begrenzt; nicht zugehörige Lernverfahren entfernt. Die frühere ID `LH-F-031` ist **zurückgezogen** und wird nicht neu vergeben; Open-Source-Lizenzprüfung für 1.0 verpflichtend. |
