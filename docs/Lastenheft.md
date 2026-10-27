@@ -1,6 +1,6 @@
 # SASD-Chess – Lastenheft
 
-> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.1 · **Datum:** 27.10.2026  
+> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.2 · **Datum:** 27.10.2026  
 > **Projekt:** SASD-Chess · **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
 > **Sprache:** Deutsch · **Geplanter Produkttyp:** frei verfügbare, lokal nutzbare Schachanwendung mit eigener klassischer Engine
 
@@ -26,6 +26,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-Z-04 | Trennung von Zuständigkeiten | Regeln, Partieablauf, Engine und UI sind getrennt test- und austauschbar. |
 | LH-Z-05 | Portabilität | Grundmodule und Engine lassen sich mindestens unter Linux und Windows bauen und testen. |
 | LH-Z-06 | Offene Weiterentwicklung | Architektur und Dokumentation erlauben spätere zusätzliche Oberflächen, Analysefunktionen und KI-Experimente. |
+| LH-Z-07 | Interoperable Engine-Matches | SASD-Chess kann über UCI sowohl gegen externe Programme als auch gegen eine zweite Instanz der eigenen Engine spielen; ein unabhängiger Match-Controller führt und protokolliert die Partien. |
 
 **Nicht-Ziel für Version 1.0:** eine Elo-Garantie, Spielstärke auf Stockfish-Niveau oder ein selbstlernendes neuronales Schachsystem.
 
@@ -85,6 +86,15 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-F-030 | K | Stellungsanalyse, Variantenbaum, Eröffnungsbuch, Endspieltabellen und Engine-gegen-Engine-Turniermodus. |
 | LH-F-031 | Z | Austauschbare lernende Bewertungsmodelle, trainierbare Engine-Komponenten und systematisches Selbstspiel. |
 | LH-F-032 | Z | Weitere Brettspiele mittels eines gesonderten generischen Spielkerns; **keine** Voraussetzung für Schach 1.0. |
+| LH-F-033 | M | Eine externe **UCI-konforme** Schach-Engine kann als Gegner über einen gesonderten Prozess eingebunden werden; standardmäßige Ein-/Ausgabe (stdin/stdout) dient als Kommunikationskanal. |
+| LH-F-034 | M | Ein **Match-Controller** (Schiedsrichter) kann zwei voneinander unabhängige UCI-Engine-Prozesse starten und eine Partie zwischen ihnen vollständig leiten. |
+| LH-F-035 | M | Der Match-Controller unterstützt ausdrücklich zwei Instanzen **derselben** SASD-Chess-Binärdatei sowie zwei unterschiedliche Engines. Prozesse haben getrennten Zustand; Spielerfarben und Startparameter sind konfigurierbar. |
+| LH-F-036 | M | Der Match-Controller verwaltet einen autoritativen Brettzustand und prüft **jeden** gemeldeten Zug auf Legalität, bevor er ihn übernimmt und der Gegenseite die aktualisierte Stellung übergibt. |
+| LH-F-037 | M | Der Match-Controller kennt feste Suchtiefe und definierte Zeitkontrollen, beendet Spiele korrekt und erkennt Zeitüberschreitung, ungültige Züge, Verbindungs-/Prozessabbruch und Protokollfehler. |
+| LH-F-038 | M | Jede beendete Partie kann mit Engine-Kennungen, Farben, Ergebnis, Zeitkontrolle und vollständiger Zugfolge als PGN protokolliert werden. |
+| LH-F-039 | S | Automatisierte Serien von Engine-Partien mit Farbwechsel, Resultatübersicht (Sieg/Remis/Niederlage) und reproduzierbarer Konfiguration sind möglich. |
+| LH-F-040 | S | Ein laufendes Engine-Match kann in der Desktop-Oberfläche beobachtet, gestoppt und mit Zugliste angezeigt werden. |
+| LH-F-041 | K | Späterer Netzwerk-Transport bzw. XBoard/CECP-Adapter ohne Veränderung der Kern- und Matchlogik. |
 
 ## 6. Nichtfunktionale Anforderungen
 
@@ -104,6 +114,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-N-012 | M | **Sicherheit/Datenschutz:** Lokale Partien werden nicht ohne ausdrückliche Aktion übertragen; Formateingaben sind begrenzt und robust zu verarbeiten. |
 | LH-N-013 | M | **Build-Reproduzierbarkeit:** Bauen und Testen erfolgen über dokumentierte, weitgehend automatisierbare Schritte. |
 | LH-N-014 | S | **Open Source:** Ein öffentlich nutzbares Lizenzmodell, Contributor-Regeln und Drittanbieter-Lizenzprüfung werden vor der ersten öffentlichen Version verbindlich festgelegt. |
+| LH-N-015 | M | **Prozessisolation:** Zwei gleichzeitig gestartete Engines teilen weder globale Partiestände noch Engine-Speicher; fehlgeschlagene Prozesse blockieren den Match-Controller nicht dauerhaft. |
 
 ## 7. Typische Nutzungsszenarien
 
@@ -138,6 +149,19 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 **Ablauf:** Externe Oberfläche startet UCI-Prozess → sendet Identifikation, Stellung und Suchauftrag → Engine liefert einen legalen `bestmove` oder einen regelkonformen Ergebnisfall.  
 **Ergebnis:** Basisinteroperabilität ohne eigene Desktop-GUI.
 
+### LH-UC-06 – Externe Engine gegen SASD-Chess
+
+**Vorbedingung:** Zwei ausführbare, UCI-fähige Engine-Programme sind erreichbar.  
+**Ablauf:** Match-Controller mit Pfaden, Farben, Zeitbudget oder Suchtiefe konfigurieren → für jede Engine einen eigenständigen Prozess starten → beide per UCI initialisieren → abwechselnd die autoritative Stellung senden, die jeweilige Engine rechnen lassen und den empfangenen `bestmove` vor der Übernahme validieren.  
+**Ausnahmen:** Verbotener Zug, Prozessabbruch, Protokollfehler und Überschreitung des zulässigen Budgets werden protokolliert und nach definiertem Regelwerk als Fehler bzw. Partieergebnis behandelt.  
+**Ergebnis:** Eine vollständige, reproduzierbar dokumentierte Partie einschließlich Ergebnis und PGN.
+
+### LH-UC-07 – SASD-Chess gegen sich selbst
+
+**Vorbedingung:** Das Engine-Programm wurde erfolgreich gebaut.  
+**Ablauf:** Der Match-Controller startet die gleiche Engine-Binärdatei zweimal mit getrennten Prozesskanälen; optional unterschiedliche Einstellungen, ansonsten gleiche Konfiguration. Die Prozesse spielen Weiß und Schwarz und dürfen nicht direkt auf gemeinsame Partiezustände zugreifen.  
+**Ergebnis:** Beide Instanzen spielen eine vollständige legale Partie. Ein Abbruch einer Instanz beendet die übrigen Prozesse kontrolliert; die bislang gespielten Züge bleiben für die Diagnose erhalten.
+
 ## 8. Ein- und Ausgaben / Daten
 
 - **Eingaben:** Feld-/Figurenauswahl, Modi, Suchparameter, FEN-Stellung, UCI-Kommandos; später optional PGN-Dateien.
@@ -171,6 +195,10 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-A-10 | CI/Portabilität | Dokumentierter Build und automatisierte Core-/Engine-Tests sind unter Windows und Linux erfolgreich. |
 | LH-A-11 | Offline/Datenschutz | Spielen, Laden, Export und Engine-Suche funktionieren ohne Netzwerk. |
 | LH-A-12 | Dokumentationsprüfung | Installations-/Buildanleitung, Architekturübersicht, Tests und bekannte Einschränkungen sind vorhanden. |
+| LH-A-13 | Match gegen fremde UCI-Engine | Zwei unabhängige Engine-Prozesse werden erfolgreich initialisiert; ein vollständiges legales Spiel zwischen SASD-Chess und externer UCI-Engine wird durchgeführt und als PGN protokolliert. |
+| LH-A-14 | Selbstspiel mit zwei Prozessen | Zweimal dieselbe SASD-Chess-Engine-Binärdatei starten; beide Prozesse spielen getrennt, ohne gegenseitige Zustandskorruption, bis zum dokumentierten Partieende. |
+| LH-A-15 | Fehler- und Zeitkontrollfälle | Der Match-Controller meldet illegale `bestmove`-Ausgabe, unerwartetes Prozessende, ausbleibende UCI-Antwort und Zeitüberschreitung korrekt; alle gestarteten Prozesse werden kontrolliert bereinigt. |
+| LH-A-16 | Synchronisation | Nach jeder legalen Antwort beider Engines stimmen autoritativer Brettzustand, UCI-Zugfolge und protokollierte Partie überein. |
 
 **Abnahmeregel:** Ein Pflichtkriterium gilt nur bei reproduzierbarem Nachweis als erfüllt. Nicht abgeschlossene S-/K-Funktionen dürfen als offen dokumentiert werden; nicht erfüllte M-Kriterien verhindern die Freigabe von 1.0.
 
@@ -181,9 +209,9 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | M0 – Projektbasis | Repository-Struktur, CMake, Tests, Dokumentationskonventionen | Sauberer, reproduzierbarer Minimalbuild |
 | M1 – Schachkern | Brett, Regeln, Zustandsverwaltung, Perft | Alle Kern- und Spezialregeltests grün |
 | M2 – Partie und Formate | Partieablauf, SAN, FEN, PGN-Export, Rücknahme | Reproduzierbare vollständige Partien |
-| M3 – Klassische Engine | Bewertung, Suche, UCI, Suchabbruch | Legalitäts- und Protokolltests erfolgreich |
+| M3 – Klassische Engine | Bewertung, Suche, UCI, Suchabbruch; UCI-Match-Controller für Fremdengine und Selbstspiel | Legalitäts-, Protokoll- und Engine-Match-Tests erfolgreich |
 | M4 – Desktop-Oberfläche | Spielbare Mensch/Mensch- und Mensch/Engine-Modi | End-to-End-Abnahmetests erfolgreich |
-| M5 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Releases | LH-A-01 bis LH-A-12 erfüllt |
+| M5 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Releases | LH-A-01 bis LH-A-16 erfüllt |
 
 Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 
@@ -199,6 +227,7 @@ Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 | LH-O-06 | FIDE-Regeländerungen | Regelwerksbezug und daraus resultierende Anpassungen bei Bedarf versionieren. |
 | LH-O-07 | Ressourcen und Deadlocks bei Engine-Suche | Abbruch, Timeouts, Thread- und Speichergrenzen früh testen. |
 | LH-O-08 | Anforderungen an Barrierefreiheit | Vor GUI-Freigabe Bedienung ohne Drag-and-drop sowie Kontrast/Statusdarstellung prüfen. |
+| LH-O-09 | Externe Engines mit UCI-Abweichungen | UCI-konformes Minimum garantieren; Erweiterungen und inkompatible Engines über klar getrennte Adapter und Fehlermeldungen behandeln. |
 
 ## 13. Änderungs- und Freigabeverfahren
 
