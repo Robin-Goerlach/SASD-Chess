@@ -277,6 +277,24 @@ Zeitkontrolle ist **nicht** im Chess Core und nicht Teil des Positionsobjekts. D
 - **Wichtige Trennung:** Ein technischer UCI-Timeout ist nicht immer identisch mit einem regelkonformen Verlust durch Zeitüberschreitung.
 - **Testbarkeit:** Zeitquelle injizieren; mit Fake Clock Grenzfälle ohne Warten simulieren.
 
+
+### 5.5 Remisansprüche, Regelprioritäten und die Grenze des FEN-Formats
+
+Nach den [FIDE-Schachregeln, Artikel 9.2 und 9.3](https://handbook.fide.com/chapter/E012023), kann eine spielberechtigte Seite ein Remis wegen dreifacher Wiederholung oder der 50-Züge-Regel **auch unter Angabe eines beabsichtigten legalen Zuges** beanspruchen, wenn erst dieser Zug den Anspruch begründen würde. Die Architektur benötigt deshalb zwei unterschiedliche fachliche Operationen:
+
+- `claim_draw_now(reason)`: prüft die aktuelle Partie **mit vollständiger Historie**; verändert bei zurückgewiesenem Anspruch weder Figurenstellung noch Historie.
+- `claim_draw_after(intended_move, reason)`: prüft den vorgeschlagenen legalen Zug **transaktional** in einer temporären Stellung und dem projizierten Historienzustand. Bei berechtigtem Anspruch wird das Remis festgestellt; der Zug wird nicht irrtümlich als bereits ausgeführter Partiehalbzug protokolliert. Die genaue Behandlung von formalen Fehlansprüchen und Zeitstrafen ist von einem expliziten Turnierreglement abhängig.
+
+Ein `GameResult` sollte mindestens **Ergebnis** und **Ursache** voneinander trennen (z. B. `Checkmate`, `Stalemate`, `DeadPosition`, `FivefoldRepetition`, `SeventyFiveMoves`, `ValidClaim`, `Resignation`, `Agreement`, `TimeForfeit`, `TechnicalAbort`). Nicht alle Gründe entstehen im Core; `TechnicalAbort` wird insbesondere vom Match-Schiedsrichter erzeugt.
+
+**Wichtige Grenze von UCI:** Das Standardprotokoll ist primär eine Zug- und Suchschnittstelle; es bietet keinen allgemeinen standardisierten `claim_draw`-Befehl einer Engine an den Match-Schiedsrichter. Für reine UCI-Engine-Partien wird deshalb eine **separat dokumentierte und konfigurierbare Schiedsrichterpolitik** benötigt (beispielsweise automatische Anerkennung eines sonst beanspruchbaren Remis durch den Match-Controller). Eine solche Entscheidung ist als **Matchreglement** zu protokollieren und darf nicht fälschlich als automatisch eintretende FIDE-Regel dargestellt werden.
+
+**Schwieriger Pflichtpunkt „tote Stellung“ (LH-F-007):** Eine Materialheuristik ist nicht mit der vollständigen FIDE-Definition gleichzusetzen. Für eine Freigabe mit behaupteter vollständiger Regeltreue muss die Implementierung ihre Abdeckung nachweisen oder die fachliche Muss-Anforderung **vorher ausdrücklich** abändern. Eine unvollständige Prüfung darf nicht als erfülltes V1.0-Abnahmekriterium verbucht werden.
+
+**Uhrregeln:** Bei Zeitüberschreitung ist nach [FIDE Artikel 6.9](https://handbook.fide.com/chapter/E012023) zu beachten, ob die Gegenseite durch *irgendeine legale Zugfolge* überhaupt Matt erzielen könnte; andernfalls ist die Partie remis. Vereinfachte Materialheuristiken dürfen eine falsche Verlustwertung nicht verursachen. Der Match-Controller trennt darüber hinaus einen **technischen Antworttimeout** von einer tatsächlichen Schachuhr-Flagge.
+
+**FEN besitzt keine Zuggeschichte**: Ein isolierter FEN-Import darf keinen bereits früher entstandenen Wiederholungsanspruch erfinden. Die Vollzug-/Halbzugzähler sind für bestimmte Regeln ausreichend, aber nicht für den Verlauf mehrfach aufgetretener Stellungen. Partieimporte rekonstruieren die dafür notwendige Historie aus legal nachvollzogenen Zügen.
+
 ## 6. Klassische Strategie-Engine
 
 ### 6.1 Internes Konzept
@@ -366,6 +384,20 @@ Der Client startet eine explizit gewählte Binärdatei **ohne Shell-Interpretati
 
 **Prozessadapter:** POSIX-Prozesse (z. B. fork/exec oder passende sichere Spawn-API) und Windows-Prozesse (CreateProcess-basierter Adapter) erfüllen denselben technischen Vertrag: Start, schreiben, lesen, Stop/Exit, Wartezeitbegrenzung, Prozess-/Pipe-Aufräumen. Pfad und Argumente werden als getrennte Daten behandelt. Ein unbekanntes Engine-Binary besitzt die Rechte des gestarteten Benutzers; SASD-Chess garantiert keine OS-Sandbox.
 
+
+### 7.4 UCI-Protokollsitzung: Serialisierung, Korrelation und Reihenfolge
+
+UCI besitzt im Drahtprotokoll keine standardisierten Request-IDs zur Zuordnung beliebig überlappender Suchantworten. Darum wird **pro Engine-Sitzung höchstens ein aktiver Suchauftrag** zugelassen. Interne Such-IDs dienen nur dem eigenen Lebenszyklus und der Benutzeroberfläche; sie werden fremden Engines **nicht** als UCI-Erweiterung aufgezwungen.
+
+- Vor dem ersten Suchauftrag: `uci` → `uciok`, Optionen setzen, `isready` → `readyok`. Bei Partiewechsel `ucinewgame`, dann `isready` → `readyok`.
+- Je Halbzug `position startpos moves ...` oder `position fen ... moves ...` aus einem zentralen, vollständig legal rekonstruierten Verlauf; erst danach genau ein `go`.
+- Während `go` sind `info`-Zeilen erlaubt; eine Suchantwort wird erst mit `bestmove` abgeschlossen. Ein `stop` beendet den Auftrag **nicht unmittelbar**, sondern löst ein begrenztes Warten auf dessen Abschluss aus.
+- Eine neue Position oder ein neues `go` wird erst an dieselbe Sitzung geschickt, wenn die vorherige Suche eindeutig abgeschlossen oder die Sitzung explizit als fehlerhaft beendet wurde.
+- Bei parallelen Ereignissen (neue GUI-Partie, Undo, Stopp) wird das Suchergebnis aufgrund einer **lokalen Generation** verworfen; ein verspätetes `bestmove` darf nicht einem neuen Auftrag zugeschrieben werden.
+- UCI-Host stdout bekommt **einen** serialisierenden Schreiber, UCI-Client stdout/stdin einen getrennten asynchronen Reader/Writer je Prozess. `info` wird typisiert verarbeitet oder begrenzt ignoriert, jedoch nicht als `bestmove` fehlinterpretiert.
+
+Die Interpretation von unbekannten `option`-Werten, zusätzlichen `info`-Feldern, leeren Ausgaben und Fehlerfällen wird mit realen UCI-Kompatibilitätstests sowie einem absichtlich fehlerhaften Mock-Prozess getestet. Ein UCI-Host darf ohne eigene Benutzeroberfläche gestartet werden.
+
 ## 8. Match-Controller als eigenständiger Schiedsrichter
 
 ### 8.1 Drei Prozesse, zwei Engine-Sitzungen
@@ -426,6 +458,26 @@ Jeder Matchlauf besitzt Match-ID, getrennte Spielerkennungen und definierte Been
 - Spätere Matchserien: wiederverwenden des MatchControllers mit Farbwechsel, gepaarten Eröffnungen und unabhängigen Ergebnissen.
 
 **Nicht empfohlen:** eigene Engine direkt mit internen Methoden gegen eine externe Engine spielen lassen und dadurch einen zweiten Matchregelkern erzeugen.
+
+
+### 8.5 Zwei Uhren, Fehlerpriorität und Ergebniszustand
+
+Ein Match wird durch eine **einzige** Ablaufsteuerung serialisiert; Prozesse existieren gleichzeitig, die beauftragten Züge folgen jedoch dem regulären Zugrecht. Mindestens diese Ereignisse werden fachlich getrennt:
+
+| Ereignis | Quelle | Folge |
+| --- | --- | --- |
+| Legal empfangener Zug | UCI + Core-Prüfung | Uhr aktualisieren, Game-Zug anwenden, Endstatus prüfen |
+| Matt/Patt/automatisches Remis | Game | Partie beenden; keinen weiteren `go`-Auftrag auslösen |
+| Korrekt beanspruchbares Remis | Game + festgelegte Matchpolitik | Eigenständige Entscheidung samt Reglement-Ursache protokollieren |
+| Schachuhr abgelaufen | Monotone Match-Uhr + Spielregeln | Flaggenfall gemäß vorher gewähltem Reglement (inkl. möglichem Remis) |
+| Antwort-/Protokolltimeout | UCI-Client/Watchdog | Technischer Fehler, **nicht automatisch** ein Schach-Uhrenverlust |
+| Prozessabsturz / illegaler Bestmove | Process-/Core-Grenze | Keine Zugannahme; technischer Abbruch oder regelbasierte Wertung gemäß Matchkonfiguration |
+
+**Messgrenzen:** Für Schachuhren wird der Zeitbereich vom Abschicken von `go` bis zum vollständigen Empfang der `bestmove`-Zeile auf der Controller-Seite gemessen; ein gegebenenfalls gewünschter Kommunikations-Overhead ist offen, symmetrisch und als eigene Policy zu definieren. Bei fester Suchtiefe gilt ein **technischer Sicherheitstimeout**, der nicht als gewöhnliche Schachuhr missverstanden werden darf. Das Zeitmodell wird durch injizierbare Clock/Transport-Testdoubles geprüft.
+
+**Shutdown-/Fehlerreihenfolge:** Bei Abbruch keine weiteren `go`-Aufträge senden → aktiven Suchauftrag kooperativ stoppen → ausstehende Ausgabe-/Diagnosekanäle begrenzt abarbeiten → `quit` senden → angemessen begrenzt auf Prozessende warten → gegebenenfalls OS-seitig beenden → Ressourcen und Kindprozesse vollständig freigeben → PGN-Ergebnis und technische Ursache korrekt ablegen. Unbekanntes Ergebnis wird als `*` protokolliert und nicht zum Remis umgedeutet.
+
+**Fremde Executables:** OS-Prozessgrenzen verhindern versehentliche gemeinsame Partiestände, sind aber **keine Sicherheits-Sandbox**. Plattformspezifische Prozessadapter sollen auch bei Fehlern zuverlässig aufräumen (unter Windows kann ein Job-Objekt, unter POSIX eine Prozessgruppe ein geeigneter Baustein sein; Details per ADR), ohne unnötige Rechte anzufordern.
 
 ## 9. Oberflächenarchitektur und Anwendungsfälle
 
