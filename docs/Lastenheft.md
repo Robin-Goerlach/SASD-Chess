@@ -1,6 +1,6 @@
 # SASD-Chess – Lastenheft
 
-> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.3 · **Datum:** 27.10.2026  
+> **Dokumentenstatus:** Entwurf zur fachlichen Abstimmung · **Version:** 0.4 · **Datum:** 27.10.2026  
 > **Projekt:** SASD-Chess · **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
 > **Sprache:** Deutsch · **Geplanter Produkttyp:** frei verfügbare, lokal nutzbare Schachanwendung mit eigener klassischer Engine
 
@@ -16,6 +16,8 @@ SASD-Chess soll ein nachvollziehbar aufgebautes C++-Schachprogramm werden, das v
 
 Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwicklungsprojekt sein. **Korrektheit, klare Architektur, aussagekräftige Tests und ausführliche Codekommentare haben zunächst Vorrang vor maximaler Performance**.
 
+Die klassischen Schachalgorithmen sollen zusätzlich als **experimentell untersuchbare Verfahren der Informatik** dienen. Dazu sind nachvollziehbare Messungen, dokumentierte Vergleichsbedingungen, reproduzierbare Tests und klar gekennzeichnete wissenschaftliche Aussagegrenzen vorzusehen. SASD-Chess bleibt ein Schachprogramm und wird weder zu einem allgemeinen Forschungsplattformprodukt noch zu einem lernenden Schachsystem.
+
 ## 3. Ziele und Erfolgsmaßstäbe
 
 | ID | Ziel | Erfolgskriterium |
@@ -27,6 +29,9 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-Z-05 | Portabilität | Grundmodule und Engine lassen sich mindestens unter Linux und Windows bauen und testen. |
 | LH-Z-06 | Offene Weiterentwicklung | Architektur und Dokumentation erlauben spätere zusätzliche Oberflächen, Stellungsanalysen und Verbesserungen klassischer Such- und Bewertungsverfahren. |
 | LH-Z-07 | Interoperable Engine-Matches | SASD-Chess kann über UCI sowohl gegen externe Programme als auch gegen eine zweite Instanz der eigenen Engine spielen; ein unabhängiger Match-Controller führt und protokolliert die Partien. |
+| LH-Z-08 | Verständliche Schach- und Engine-Analyse | Stellungen, Bewertungsmerkmale und Suchergebnisse lassen sich gezielt untersuchen, ohne die normale Partiebedienung zu beeinträchtigen. |
+| LH-Z-09 | Wissenschaftlich auswertbare Experimente | Algorithmen, Optimierungen, Datenstrukturen und Engine-Versionen können unter dokumentierten Bedingungen verglichen werden. |
+| LH-Z-10 | Reproduzierbarkeit und ehrliche Schlussfolgerungen | Messergebnisse enthalten Eingaben, Einstellungen und Versionsstand; Statistiken unterscheiden Beobachtung, Unsicherheit und belastbare Aussage. |
 
 **Nicht-Ziel für Version 1.0:** eine garantierte Elo-Zahl, Spielstärke auf Stockfish-Niveau oder ein Netzwerkdienst für Onlinepartien. Der Gegenstand dieses Repositories bleibt ausschließlich ein klassisches Schachprogramm.
 
@@ -95,6 +100,43 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-F-040 | S | Ein laufendes Engine-Match kann in der Desktop-Oberfläche beobachtet, gestoppt und mit Zugliste angezeigt werden. |
 | LH-F-041 | K | Späterer Netzwerk-Transport bzw. XBoard/CECP-Adapter ohne Veränderung der Kern- und Matchlogik. |
 
+### 5.4 Zusätzliche Analyse- und Forschungsfunktionen – SASD-Chess Laboratory
+
+**Produktkonzept:** Drei logisch getrennte Arbeitsbereiche **Spielen**, **Analysieren** und **Laboratory / Experimentieren**. Die Laboratory-Funktionen sind kein eigener Regelkern und keine zweite Engine; sie verwenden dieselben geprüften Komponenten des klassischen Schachprogramms. Normale Spieler müssen technische Diagnoseanzeigen nicht bedienen.
+
+**Priorisierung:** Die in dieser Tabelle als **M** bezeichneten Funktionen erweitern die bestehende Qualitätssicherung des 1.0-Kerns und sind verpflichtend. **S** bezeichnet erwünschte Zusatzfunktionen ohne V1.0-Freigabeblockade. **Z** bezeichnet ausdrücklich nach 1.0 vorgesehene Entwicklungsstufen. Umfangreiche grafische Laborfunktionen dürfen die Fertigstellung eines spielbaren 1.0-Releases nicht verzögern.
+
+| ID | Prio | Fachliche Anforderung |
+| --- | :--: | --- |
+| LH-F-042 | S | **Arbeitsbereiche:** Normaler Spielmodus, Stellungs-/Partieanalyse und experimentelles Laboratory sind für Anwender verständlich getrennt. |
+| LH-F-043 | S | **Stellungslabor:** Eine Stellung lässt sich per Bretteditor und FEN aufbauen, validieren, untersuchen und speichern; Zugrecht, Rochaderechte, En-passant-Status, legale Züge und angegriffene Felder sind sichtbar. |
+| LH-F-044 | S | **Transparente Stellungsbewertung:** Die klassischen Bewertungsmerkmale und ihre Beiträge zum statischen Stellungswert sind sichtbar; der angezeigte Suchwert wird eindeutig von der statischen Bewertung unterschieden. |
+| LH-F-045 | Z | **Suchbaumvisualisierung:** Für bewusst begrenzte Suchläufe können ausgewählte Suchzweige, Bewertungen und Alpha-Beta-Abschneidungen nachvollziehbar dargestellt werden. |
+| LH-F-046 | Z | **Algorithmusvergleich:** Klassische Suchverfahren und Optimierungen (Negamax, Alpha-Beta, Zugordnung, Transposition Tables, Quiescence Search) lassen sich mit vergleichbaren Eingaben und Suchgrenzen gegenüberstellen. |
+| LH-F-047 | S | **Benchmark-System:** Vordefinierte oder nutzerdefinierte Stellungen sind automatisiert mit festen Tiefen-/Knoten-/Zeitgrenzen untersuchbar; Knotenanzahl, Suchtiefe, Laufzeit und, soweit unterstützt, Speicher, Cutoffs und Hash-Treffer werden erfasst. |
+| LH-F-048 | S | **Statistische Engine-Vergleiche:** Der vorhandene UCI-Match-Controller unterstützt Vergleichsserien zweier Engine-Versionen mit wechselnden Farben und gepaarten Eröffnungsstellungen; Ergebniszahlen und statistische Unsicherheit werden angezeigt. |
+| LH-F-049 | Z | **Experimentverwaltung:** Forschungsläufe besitzen eine Kennung, Fragestellung, Hypothese, definierte Stellungssätze, Varianten, Wiederholungen, Konfiguration und gesicherte Ergebnisse. |
+| LH-F-050 | Z | **Untersuchungsberichte:** Aus dokumentierten Messläufen können technische Berichte mit Verfahren, Ergebnissen, Rohdatenverweisen und Grenzen der Aussagekraft als Markdown oder HTML erstellt werden; PDF ist optional. |
+| LH-F-051 | M | **Perft/Divide:** Der Regelkern bietet reproduzierbare Perft-Referenztests und die nach erstem legalen Zug aufgeschlüsselte Knotenzählung (Divide) als GUI-unabhängiges Diagnosewerkzeug. |
+| LH-F-052 | S | **Partieanalyse:** PGN-Partien können nach Import Zug für Zug mit dokumentierter Engine-Version, Suchtiefe/Zeiteinstellung, Bewertung und alternativen Zugvarianten analysiert werden. |
+| LH-F-053 | S | **Erweiterte Taktik-Regression:** Eine versionierte Sammlung taktischer Referenzstellungen ergänzt die zwingenden Regeltests; strategische Bewertungsunterschiede sind kein automatischer Regelverstoß. |
+| LH-F-054 | Z | **Brettrepräsentationsvergleich:** Unterschiedliche interne Repräsentationen, beispielsweise 64-Felder-Array und Bitboards, können bei nachgewiesener fachlicher Gleichwertigkeit hinsichtlich Performance verglichen werden. |
+| LH-F-055 | S | **Diagnoseprofile:** Es existieren klar getrennte Diagnosemodi Aus, Statistik und (später) begrenztes Tracing; das Aufzeichnen von Suchabläufen ist abschaltbar. |
+| LH-F-056 | S | **Messdatenexport:** Benchmark- und Engine-Vergleichsergebnisse sind mit dokumentierter Versionierung zusätzlich zu PGN strukturiert als JSON und/oder CSV exportierbar. |
+
+**Doppelfunktionen vermeiden:** Der nach LH-F-034 bis LH-F-039 bestehende Match-Controller bleibt die einzige Instanz zur Durchführung und Regelprüfung von Engine-Partien. Das Laboratory nutzt seine Ergebnisse. Der grundlegende PGN-Import nach LH-F-027 bleibt Voraussetzung für LH-F-052. Perft belegt Regelkorrektheit innerhalb eines Testbereichs, **nicht** die Spielstärke einer Engine.
+
+### 5.5 Wissenschaftlicher Zweck und prüfbare Forschungsfragen
+
+SASD-Chess soll insbesondere Untersuchungen zu **Suchkomplexität, Abschneideeffizienz, Stellungsbewertung, Datenstrukturen, Portabilität und Softwarekorrektheit** ermöglichen. Beispielhafte Fragestellungen:
+
+- Reduziert eine bestimmte Zugordnung bei gleicher Stellung und Tiefe die untersuchten Alpha-Beta-Knoten?
+- Welche Änderungen verbessern die tatsächlichen Ergebnisse von Engine-Vergleichspartien unter gleichen Zeitregeln?
+- Unter welchen Bedingungen unterscheiden sich Array- und Bitboard-Implementierungen bei unveränderter korrekter Zugerzeugung?
+- Welche Fehlerklassen werden durch Unit-Tests, Perft/Divide und Eigenschaftstests entdeckt?
+
+**Keine Erfolgsbehauptung ohne Daten:** Ein höherer Knoten-Durchsatz, eine geringere Knotenzahl oder ein Sieg in einer einzelnen Partie beweisen keine generell höhere Spielstärke. Experimentelle Auswertungen sollen Messwerte, methodische Annahmen, Stichprobenumfang und mögliche Störfaktoren offenlegen.
+
 ## 6. Nichtfunktionale Anforderungen
 
 | ID | Prio | Anforderung / Mess- oder Prüfansatz |
@@ -114,6 +156,11 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-N-013 | M | **Build-Reproduzierbarkeit:** Bauen und Testen erfolgen über dokumentierte, weitgehend automatisierbare Schritte. |
 | LH-N-014 | M | **Open Source:** Vor dem 1.0-Release werden Lizenz, Contributor-Regeln und die rechtmäßige Nutzung sämtlicher Drittanbieter-Komponenten und Figurenassets verbindlich dokumentiert. |
 | LH-N-015 | M | **Prozessisolation:** Zwei gleichzeitig gestartete Engines teilen weder globale Partiestände noch Engine-Speicher; fehlgeschlagene Prozesse blockieren den Match-Controller nicht dauerhaft. |
+| LH-N-016 | S | **Vergleichbarkeit:** Messreihen dokumentieren Engine-/Git-Version, Einstellungen, Eingabestellungen, Buildtyp, Compiler, Plattform und nach Möglichkeit Hardware sowie Wiederholungszahl. |
+| LH-N-017 | S | **Messqualität:** Zeitmessungen verwenden geeignete monotone Uhren; Messinstrumentierung darf auf Wunsch abgeschaltet werden und ihr Overhead muss bei Bewertungen berücksichtigt werden. |
+| LH-N-018 | S | **Transparente Statistik:** Vergleiche trennen objektive Regelkorrektheit, reine Geschwindigkeit, Suchaufwand und statistisch geschätzte Spielstärke; Unsicherheiten werden nicht verschwiegen. |
+| LH-N-019 | S | **Reproduzierbarer Export:** Experimentkonfigurationen und Ergebnisformate besitzen eine dokumentierte Version; Ausgaben enthalten keine erforderliche Cloud-Abhängigkeit. |
+| LH-N-020 | S | **Ressourcenschutz im Laboratory:** Suchtraces, Versuchsreihen, importierte PGN-Dateien und Ergebnisdaten sind hinsichtlich Umfang, Laufzeit und Speicher kontrollierbar. |
 
 ## 7. Typische Nutzungsszenarien
 
@@ -161,6 +208,26 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 **Ablauf:** Der Match-Controller startet die gleiche Engine-Binärdatei zweimal mit getrennten Prozesskanälen; optional unterschiedliche Einstellungen, ansonsten gleiche Konfiguration. Die Prozesse spielen Weiß und Schwarz und dürfen nicht direkt auf gemeinsame Partiezustände zugreifen.  
 **Ergebnis:** Beide Instanzen spielen eine vollständige legale Partie. Ein Abbruch einer Instanz beendet die übrigen Prozesse kontrolliert; die bislang gespielten Züge bleiben für die Diagnose erhalten.
 
+### LH-UC-08 – Stellung untersuchen
+
+**Ablauf:** Anwender öffnet den Analysebereich → baut eine Stellung auf oder importiert FEN → prüft ihre Gültigkeit → lässt legale Züge, Angriffsfelder und die einzelnen statischen Bewertungsmerkmale anzeigen.  
+**Ergebnis:** Stellung und Analyse sind nachvollziehbar; keine Bewertung wird als objektiv garantiert richtige Schachentscheidung ausgegeben.
+
+### LH-UC-09 – Algorithmusänderung messen
+
+**Ablauf:** Entwickler wählt dieselben Teststellungen und Suchgrenzen für zwei klassische Suchvarianten → startet wiederholte Messungen → erhält vergleichbare Knoten-/Zeit-/Speicherkennzahlen mit Versions- und Konfigurationsangaben.  
+**Ergebnis:** Die Abweichungen sind nachvollziehbar, Rohdaten bleiben zugänglich; Korrektheitsverletzungen werden getrennt von Leistungsunterschieden behandelt.
+
+### LH-UC-10 – Zwei Engine-Versionen vergleichen
+
+**Ablauf:** Der bestehende Match-Controller startet zwei unabhängige Engine-Binärdateien → beide spielen unter gleichen, dokumentierten Regeln eine Serie mit Farbwechsel und möglichst gepaarten Startstellungen → Ergebnisse werden gespeichert.  
+**Ergebnis:** Siege, Remis, Niederlagen und Punktwerte stehen mit Stichprobenumfang und statistischen Einschränkungen bereit.
+
+### LH-UC-11 – Perft-Abweichung eingrenzen
+
+**Ablauf:** Entwickler startet Perft für eine Referenz-FEN → stellt eine abweichende Knotenzahl fest → aktiviert Divide und identifiziert den ersten betroffenen Zugzweig → speichert den Fehlerfall als Regressionstest.  
+**Ergebnis:** Ein reproduzierbarer Fehlerbericht kann erzeugt werden; der Regelkern bleibt auch ohne grafische Oberfläche testbar.
+
 ## 8. Ein- und Ausgaben / Daten
 
 - **Eingaben:** Feld-/Figurenauswahl, Modi, Suchparameter, FEN-Stellung, UCI-Kommandos; später optional PGN-Dateien.
@@ -198,6 +265,7 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | LH-A-14 | Selbstspiel mit zwei Prozessen | Zweimal dieselbe SASD-Chess-Engine-Binärdatei starten; beide Prozesse spielen getrennt, ohne gegenseitige Zustandskorruption, bis zum dokumentierten Partieende. |
 | LH-A-15 | Fehler- und Zeitkontrollfälle | Der Match-Controller meldet illegale `bestmove`-Ausgabe, unerwartetes Prozessende, ausbleibende UCI-Antwort und Zeitüberschreitung korrekt; alle gestarteten Prozesse werden kontrolliert bereinigt. |
 | LH-A-16 | Synchronisation | Nach jeder legalen Antwort beider Engines stimmen autoritativer Brettzustand, UCI-Zugfolge und protokollierte Partie überein. |
+| LH-A-17 | Perft-Divide | Für dokumentierte Stellungen addieren sich alle getrennten Ausgangszug-Knotenzahlen exakt zum Perft-Gesamtergebnis; Abweichungen lassen sich bis zu einem konkreten Zugzweig eingrenzen. |
 
 **Abnahmeregel:** Ein Pflichtkriterium gilt nur bei reproduzierbarem Nachweis als erfüllt. Nicht abgeschlossene S-/K-Funktionen dürfen als offen dokumentiert werden; nicht erfüllte M-Kriterien verhindern die Freigabe von 1.0.
 
@@ -206,11 +274,14 @@ Die Lösung soll zugleich ein langfristig wartbares Lehr-, Forschungs- und Entwi
 | Stufe | Fachliches Ergebnis | Voraussetzung für nächste Stufe |
 | --- | --- | --- |
 | M0 – Projektbasis | Repository-Struktur, CMake, Tests, Dokumentationskonventionen | Sauberer, reproduzierbarer Minimalbuild |
-| M1 – Schachkern | Brett, Regeln, Zustandsverwaltung, Perft | Alle Kern- und Spezialregeltests grün |
+| M1 – Schachkern | Brett, Regeln, Zustandsverwaltung, Perft und Divide | Alle Kern-, Divide- und Spezialregeltests grün |
 | M2 – Partie und Formate | Partieablauf, SAN, FEN, PGN-Export, Rücknahme | Reproduzierbare vollständige Partien |
 | M3 – Klassische Engine | Bewertung, Suche, UCI, Suchabbruch; UCI-Match-Controller für Fremdengine und Selbstspiel | Legalitäts-, Protokoll- und Engine-Match-Tests erfolgreich |
 | M4 – Desktop-Oberfläche | Spielbare Mensch/Mensch- und Mensch/Engine-Modi | End-to-End-Abnahmetests erfolgreich |
-| M5 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Releases | LH-A-01 bis LH-A-16 erfüllt |
+| M5 – 1.0-Stabilisierung | Dokumentation, Plattformmatrix, Performance-Baseline, Releases | LH-A-01 bis LH-A-17 erfüllt |
+| L1 – Analysebasis (nach Bedarf) | Stellungslabor, Bewertungsaufschlüsselung, Diagnoseprofile, Basis-Benchmarks | Analyse erfolgt über dieselbe geprüfte Engine; Messmetadaten vollständig |
+| L2 – Vergleichslabor | Vergleichsserien, Benchmark-Export, erweiterte Taktiktests, Partieanalyse | Statistische Auswertung und Export mit dokumentierten Eingaben reproduzierbar |
+| L3 – Vertieftes Laboratory | Experimentverwaltung, Suchbaumvisualisierung, Algorithmen-/Datenstrukturvergleich und Forschungsberichte | Eingeschränkte Tracegrößen, korrekte Vergleichsmethodik und nachvollziehbare Berichte |
 
 Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 
@@ -227,6 +298,9 @@ Diese Stufen definieren **Abhängigkeiten**, keine zugesagten Kalendertage.
 | LH-O-07 | Ressourcen und Deadlocks bei Engine-Suche | Abbruch, Timeouts, Thread- und Speichergrenzen früh testen. |
 | LH-O-08 | Anforderungen an Barrierefreiheit | Vor GUI-Freigabe Bedienung ohne Drag-and-drop sowie Kontrast/Statusdarstellung prüfen. |
 | LH-O-09 | Externe Engines mit UCI-Abweichungen | UCI-konformes Minimum garantieren; Erweiterungen und inkompatible Engines über klar getrennte Adapter und Fehlermeldungen behandeln. |
+| LH-O-10 | Umfang des Laboratory | Neue wissenschaftliche Werkzeuge als klar abgegrenzte Stufen mit eigener Abnahme entwickeln; 1.0-Spielbarkeit nicht verschieben. |
+| LH-O-11 | Aussagekraft von Engine-Vergleichspartien | Genügend Partien, Farbwechsel, gleiche Eröffnungen, unabhängige Auswertung und statistische Unsicherheit berücksichtigen. |
+| LH-O-12 | Messverzerrung und Instrumentierung | Tracing nur begrenzt; unveränderte Suchkonfigurationen, Debug-/Release-Unterschiede und Hardwareeinfluss dokumentieren. |
 
 ## 13. Änderungs- und Freigabeverfahren
 
@@ -242,3 +316,4 @@ Jede fachliche Änderung erhält eine dokumentierte Begründung, betroffene **LH
 | 0.1 | 27.10.2026 | Fachlicher Erstentwurf für Schachkern, Oberfläche und klassische Strategie-Engine. |
 | 0.2 | 27.10.2026 | UCI-Interoperabilität, unabhängiger Match-Controller und Selbstspiel als 1.0-Pflichtumfang konkretisiert. |
 | 0.3 | 27.10.2026 | Projekt strikt auf klassische Schachsoftware begrenzt; nicht zugehörige Lernverfahren entfernt. Die frühere ID `LH-F-031` ist **zurückgezogen** und wird nicht neu vergeben; Open-Source-Lizenzprüfung für 1.0 verpflichtend. |
+| 0.4 | 27.10.2026 | Drei Arbeitsbereiche, zwölf Analyse-/Forschungsfunktionen, Diagnoseprofile, Benchmark- und Experimentdaten, Perft-Divide, fachliche Wissenschaftsziele sowie gestufte Umsetzung ergänzt. |
