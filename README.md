@@ -1,25 +1,51 @@
 # SASD-Chess
 
-SASD-Chess is an open-source C++ chess project with a modular architecture separating chess rules, legal move generation, game management, user interface, and a classical search engine. Designed for portability, clear code, automated tests, and UCI compatibility, it also provides a flexible foundation for future AI and machine learning experiments.
+**SASD-Chess** ist ein eigenständiges Open-Source-Projekt zur Entwicklung eines klassischen Schachprogramms in **C++**. Es umfasst das vollständige Schachregelwerk, eine grafische Oberfläche und eine **selbst entwickelte Strategie-Engine** mit klassischer Spielbaumsuche und heuristischer Stellungsbewertung.
 
-## Project status
+Der Schwerpunkt liegt auf **Korrektheit, sauberer Architektur, dokumentierten Algorithmen, automatisierten Tests und Portabilität**. Eine Internetverbindung oder ein Benutzerkonto sind für die vorgesehenen Kernfunktionen nicht erforderlich.
 
-**Requirements and technical design phase.** The following documents describe planned capabilities, **not** already completed features.
+> **Projektstatus (27.10.2026): Planung und Spezifikation.** Die nachfolgenden Eigenschaften beschreiben das Entwicklungsziel. Es liegt noch keine fertige, spielbare Programmversion vor.
 
-## Dokumentation (Deutsch)
+## Anforderungen und technische Planung
 
-- [Lastenheft](docs/Lastenheft.md) – fachliche Ziele, Anforderungen und Abnahmekriterien.
-- [Pflichtenheft](docs/Pflichtenheft.md) – technische Architektur, Algorithmen, Schnittstellen und Prüfverfahren.
+Die ausführlichen, deutschsprachigen Projektdokumente sind:
 
-## Interoperabilität und Selbstspiel (geplant für Version 1.0)
+- **[Lastenheft](docs/Lastenheft.md)** – fachlicher Bedarf, Zielgruppen, Schachregeln, Funktionen, Qualitätsanforderungen, Muss-/Soll-Priorisierung, Nutzungsszenarien und messbare Abnahmekriterien.
+- **[Pflichtenheft](docs/Pflichtenheft.md)** – technische Umsetzung, C++-Architektur, Datenmodell, Zugerzeugung, klassische Spielstrategie, UCI-Protokoll, Prozesssteuerung, Testmatrix und Meilensteine.
 
-SASD-Chess soll eine standardkonforme **UCI-Engine** bereitstellen, die mit anderen Schachoberflächen zusammenarbeitet. Ein separater, auch **ohne GUI** nutzbarer **Engine-Match-Controller** übernimmt die Rolle des Schiedsrichters: Er startet zwei voneinander unabhängige UCI-Prozesse, empfängt deren Züge, prüft jeden Zug mit dem eigenen Schachregelwerk, verwaltet die Partie und speichert das Ergebnis als PGN.
+Beide Dokumente sind Entwürfe zur fachlichen Freigabe (Version 0.3). Nicht bestätigte technische Entscheidungen sind darin entsprechend gekennzeichnet.
 
-Damit sind zwei wichtige Einsatzfälle möglich:
+## Geplante Funktionen
 
-- **SASD-Chess gegen eine fremde UCI-Engine**.
-- **SASD-Chess gegen SASD-Chess:** Zwei parallele Prozesse desselben Programms spielen automatisch gegeneinander.
+| Bereich | Funktionsumfang |
+| --- | --- |
+| **Schachkern** | Standardschach, legale Züge, Rochade, En passant, Umwandlung, Matt, Patt, Remis und Rücknahme |
+| **Spielstrategie** | Eigene klassische Engine mit Negamax/Alpha-Beta, Stellungsbewertung, Suchtiefe und Zeitkontrolle |
+| **Benutzeroberfläche** | Schachbrett, Zugliste, Spielstände, Mensch/Mensch und Mensch/Computer |
+| **Formate** | FEN-Ein-/Ausgabe, SAN-Notation, PGN-Export |
+| **UCI-Engine** | Nutzung von SASD-Chess durch UCI-kompatible externe Schachoberflächen |
+| **UCI-Client** | Start und Steuerung einer fremden UCI-Engine über eigene Prozesskanäle |
+| **Match-Controller** | **Automatische Partien zwischen zwei UCI-Prozessen**, auch zwei Instanzen derselben SASD-Chess-Binärdatei |
+| **Tests** | Perft, Unit-/Integrations- und UCI-Protokolltests, Debug-/Release-Builds unter Windows und Linux |
 
-Erweiterte Turniere, Serienstatistiken und KI-Trainingsverfahren können später auf derselben Schnittstelle aufbauen.
+### Schach-Engine gegen Schach-Engine
 
-> **Noch kein ausführbarer Match-Controller:** Kommandozeilenbeispiele im Pflichtenheft sind Entwürfe und noch nicht implementiert.
+Eine Engine kommuniziert nicht direkt mit einer zweiten Engine. Ein **separater Match-Controller** startet zwei unabhängige Programme, sendet die Stellungen über UCI, validiert jeden gemeldeten Zug über den gemeinsamen Schachkern und dokumentiert den Verlauf als PGN.
+
+Die Schnittstelle erlaubt insbesondere **SASD-Chess gegen fremde UCI-Engines** und **SASD-Chess gegen SASD-Chess** (zwei gleichzeitig gestartete Prozesse). Der Match-Controller ist auch ohne grafische Oberfläche als Kommandozeilenprogramm vorgesehen.
+
+## Entwicklungsschritte
+
+1. **M0 – Projektbasis:** CMake, CTest, CI, Coding- und Dokumentationsregeln.
+2. **M1 – Schachkern:** Stellungen, legale Züge, Sonderregeln und Perft-Referenztests.
+3. **M2 – Spielverwaltung:** Zugliste, Remisregeln, FEN, SAN und PGN.
+4. **M3 – Strategie-Engine:** Klassische Suche, Bewertung und UCI-Engine-Prozess.
+5. **M4 – Engine-Matches:** UCI-Client, Match-Controller, Fremdengine-Partien und Selbstspiel.
+6. **M5 – Desktop:** Spielbare Benutzeroberfläche für die Pflichtmodi.
+7. **M6 – Veröffentlichung:** Regressionstests, Dokumentation, Plattformprüfung und Release 1.0.
+
+Das Projekt strebt **C++20** und **CMake** an. Die Auswahl des GUI-Frameworks und der konkreten Open-Source-Lizenz ist noch offen. Die Schachlogik soll vollständig unabhängig von der gewählten Benutzeroberfläche sein.
+
+## Geltungsbereich
+
+Dieses Repository behandelt ausschließlich **SASD-Chess als klassisches Schachprogramm**. Der fachliche und technische Rahmen wird durch die beiden oben verlinkten Dokumente festgelegt.
