@@ -12,6 +12,7 @@ Die ausführlichen, deutschsprachigen Projektdokumente sind:
 
 - **[Lastenheft](docs/Lastenheft.md)** – fachlicher Bedarf, Zielgruppen, Schachregeln, Funktionen, Qualitätsanforderungen, Muss-/Soll-Priorisierung, Nutzungsszenarien und messbare Abnahmekriterien.
 - **[Pflichtenheft](docs/Pflichtenheft.md)** – technische Umsetzung, C++-Architektur, Datenmodell, Zugerzeugung, klassische Spielstrategie, UCI-Protokoll, Prozesssteuerung, Testmatrix und Meilensteine.
+- **[Architekturdokument](docs/Architektur.md)** – zusammenhängende Zielarchitektur, Modulgrenzen, Daten- und Kontrollflüsse, Lebenszyklen, Schnittstellen, Laboranbindung, Qualitätssicherung und technische Entscheidungen.
 
 Beide Dokumente sind Entwürfe zur fachlichen Freigabe (Version 0.3). Nicht bestätigte technische Entscheidungen sind darin entsprechend gekennzeichnet.
 
