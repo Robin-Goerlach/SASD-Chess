@@ -1,6 +1,6 @@
 # SASD-Chess – Softwarearchitektur
 
-> **Dokument:** ARCH-001 · **Version:** 0.1 · **Stand:** 27.10.2026  
+> **Dokument:** ARCH-001 · **Version:** 0.2 · **Stand:** 27.10.2026  
 > **Status:** Architekturentwurf zur technischen und fachlichen Freigabe; keine Aussage über bereits vorhandenen Implementierungsstand  
 > **Repository:** https://github.com/Robin-Goerlach/SASD-Chess  
 > **Grundlagen:** [Lastenheft v0.4](Lastenheft.md) · [Pflichtenheft v0.4](Pflichtenheft.md)  
@@ -91,8 +91,8 @@ Dieses Dokument definiert eine **umsetzbare Zielarchitektur** für SASD-Chess. E
 | **chess-core** | Brett, Stellung, Figuren, Züge, Angriffserkennung, Legalität, reversible Zustandsänderung, Perft | C++-Standardbibliothek |
 | **chess-game** | Partiehistorie, Wiederholungen, Remisansprüche, Spielende, Ergebnis, Zuglisten | chess-core |
 | **chess-formats** | FEN, SAN, PGN, UCI-Zugnotation und Validierung | chess-core, chess-game |
-| **chess-search** | Klassische Stellungsbewertung, Negamax/Alpha-Beta, Suchgrenzen und Suchresultat | chess-core, chess-game |
-| **chess-diagnostics** | Optionale Statistik-/Trace-Ereignisse, Suchbeobachtung; Typen/Adapter | chess-core; Suchintegration über kleine Verträge |
+| **chess-search** | Klassische Stellungsbewertung, Negamax/Alpha-Beta, Suchgrenzen und Suchresultat | chess-core, chess-game, optional chess-diagnostics-API |
+| **chess-diagnostics** | Schmale Diagnoseverträge, optionale Zähler und begrenzte Traces | Standardbibliothek; keine Abhängigkeit von chess-search |
 | **chess-uci-protocol** | UCI-Zeilenparser, Kommandos, Antworttypen und Formatierung | möglichst nur Standardbibliothek, chess-formats sofern erforderlich |
 | **chess-uci-host** | Eigenen UCI-Prozess betreiben, Suchcontroller und stdout/stderr koordinieren | chess-uci-protocol, chess-search, chess-game, chess-formats |
 | **chess-process** | OS-unabhängige Kindprozesse, Pipes, Exit-/Timeout-Behandlung | Standardbibliothek, OS-Adapter |
@@ -137,6 +137,29 @@ C++ Standardbibliothek
 - **Verboten:** ein Engine-Objekt, dessen interner Zustand direkt und ungeprüft den Match-Zustand überschreibt.
 - **Erlaubt:** kleiner interner Suchzustand, optimierte Brettrepräsentation hinter einem stabilen Fachvertrag, Verwendung derselben Core-Routinen in Tests und Match.
 - **Für V1.0 bevorzugt:** Bibliotheken in einem CMake-Monorepo; keine Plug-in-ABI, kein RPC-Framework und keine künstlich aufgeteilten Services.
+
+
+### 3.4 Verbindliche technische Verträge an Modulgrenzen
+
+**Einheitliches Zustandsrecht:** Der `chess-core` entscheidet, welche Einzelzüge legal sind; `chess-game` entscheidet unter Einbeziehung der Historie über beanspruchbare und automatische Remisfolgen sowie den Partieabschluss. `chess-match` entscheidet nur über die **Ausführung des Wettbewerbs** (Spielerwechsel, Uhren, technische Fehler, Partieergebnis gemäß Reglement), nicht über neue Schachregeln. Dadurch existiert keine zweite, sich abweichend entwickelnde Zuggenerierung.
+
+| Grenze | Eingaben | Ergebnis | Verbote/Invarianten |
+| --- | --- | --- | --- |
+| Core: Legalität | Gültige `Position`, vorgeschlagener `Move` | Akzeptierter legaler Zug oder typisierter Fehler | Bei Fehler keine Zustandsänderung |
+| Core: Suchoperation | Mutable *lokale* `Position` + nachweislich legaler Zug | `UndoState`, danach vollständige Wiederherstellung | Keine fremd geteilte mutable Stellung |
+| Game: Spieleraktion | `Game`, legaler Zug oder Remisanspruch | Neuer `GameSnapshot`, Ereignisse/Ergebnis | Historie und aktueller Zustand sind atomar konsistent |
+| Search: Suche | Positions-/Historien-Snapshot, Limits, Stop-Token, Diagnoseprofil | `SearchResult` mit legalem Zug oder terminalem Zustand | Darf autoritatives `Game` nicht mutieren |
+| Format: FEN/SAN/PGN | Fremdtext bzw. Domänensnapshots | Validiertes Domänenobjekt oder Serialisierung | Kein partielles Überschreiben laufender Spiele |
+| UCI Host: Protokoll | Zeilenstrom + Sitzung | Serialisierte UCI-Antworten | Kein unformatierter stdout-Text |
+| UCI Client: Engine | Prozesspfad/Argumente + UCI-Commands | Asynchrone Antworten oder technischer Fehler | Kein Vertrauen in Zuglegalität des Gegners |
+| Match: Zugtransaktion | Aktuelle autoritative Partie + `bestmove` | Akzeptierter Zug/Ergebnis/technischer Abbruch | Kein Zug ohne erneute Legalitätsprüfung |
+| Laboratory: Versuch | Unveränderliche Versuchskonfiguration + Datenkorpus | Versionierte Rohdaten und Metadaten | Kein eigener Regelkern; keine stillschweigend geänderten Suchparameter |
+
+**Fehlervertrag (C++20):** An öffentlichen Domänen- und Formatgrenzen werden explizite Ergebnistypen (z. B. `Result<T, Error>` als projektspezifisch kleiner Typ, `std::variant` oder gleichwertig) verwendet; `std::expected` darf **nicht** ungeprüft als C++20-Standardfeature vorausgesetzt werden. Ausnahmen können in Implementierungsdetails zulässig sein, dürfen aber keine unkontrollierten Prozess-/UI-Grenzen überqueren.
+
+**Besitzvertrag:** `Game` besitzt seine aktuellen Positionen und Historiendaten; `SearchTask` besitzt eine unabhängige Stellungskopie samt benötigtem History-Kontext; ein `MatchController` besitzt zwei `UciSession`-Objekte und deren Kindprozess-Ressourcen. GUI- und Laboratory-Zugriffe nutzen Snapshots oder ausdrücklich synchronisierte read-only-Sichten, niemals rohe mutable Referenzen.
+
+**Abhängigkeitsregel:** Die statischen Diagnosetypen werden in einem kleinen, eigenständig baubaren Vertrag bereitgestellt. `chess-search` darf diesen Vertrag aufrufen; `chess-diagnostics` darf dagegen **nicht** die konkrete Suche kennen. Eine optionale Diagnoseimplementierung wird bei der Komposition angeschlossen. Ein CMake-Zyklus zwischen `chess-search` und `chess-diagnostics` ist unzulässig.
 
 ## 4. Schachdomäne: Zustände und Invarianten
 
