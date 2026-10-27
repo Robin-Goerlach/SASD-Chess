@@ -1,15 +1,25 @@
 # SASD-Chess
+
 SASD-Chess is an open-source C++ chess project with a modular architecture separating chess rules, legal move generation, game management, user interface, and a classical search engine. Designed for portability, clear code, automated tests, and UCI compatibility, it also provides a flexible foundation for future AI and machine learning experiments.
 
-## Projektplanung / Project planning
+## Project status
 
-SASD-Chess befindet sich in der Planungsphase. Die folgenden Dokumente beschreiben den **geplanten Umfang**, nicht bereits fertig implementierte Funktionen:
+**Requirements and technical design phase.** The following documents describe planned capabilities, **not** already completed features.
 
-- [Lastenheft (Deutsch)](docs/Lastenheft.md) – fachliche Ziele, Anforderungen und Abnahmekriterien.
-- [Pflichtenheft (Deutsch)](docs/Pflichtenheft.md) – geplante C++-Architektur, Umsetzung und Tests.
+## Dokumentation (Deutsch)
 
-### Engine-Interoperabilität und Selbstspiel
+- [Lastenheft](docs/Lastenheft.md) – fachliche Ziele, Anforderungen und Abnahmekriterien.
+- [Pflichtenheft](docs/Pflichtenheft.md) – technische Architektur, Algorithmen, Schnittstellen und Prüfverfahren.
 
-SASD-Chess soll sowohl als **UCI-Engine** für externe Schachoberflächen als auch als **UCI-Match-Controller** arbeiten können. Der Controller soll zwei unabhängige Engine-Prozesse starten und automatisch gegeneinander spielen lassen – ausdrücklich auch zwei parallele Instanzen von SASD-Chess. Alle Züge werden zentral auf Legalität überprüft und können als PGN ausgegeben werden.
+## Interoperabilität und Selbstspiel (geplant für Version 1.0)
 
-**Status:** Die UCI-Match-Funktionen sind spezifiziert, aber noch nicht implementiert. Für die erste Version sind C++ und eine entkoppelte, testbare Architektur vorgesehen.
+SASD-Chess soll eine standardkonforme **UCI-Engine** bereitstellen, die mit anderen Schachoberflächen zusammenarbeitet. Ein separater, auch **ohne GUI** nutzbarer **Engine-Match-Controller** übernimmt die Rolle des Schiedsrichters: Er startet zwei voneinander unabhängige UCI-Prozesse, empfängt deren Züge, prüft jeden Zug mit dem eigenen Schachregelwerk, verwaltet die Partie und speichert das Ergebnis als PGN.
+
+Damit sind zwei wichtige Einsatzfälle möglich:
+
+- **SASD-Chess gegen eine fremde UCI-Engine**.
+- **SASD-Chess gegen SASD-Chess:** Zwei parallele Prozesse desselben Programms spielen automatisch gegeneinander.
+
+Erweiterte Turniere, Serienstatistiken und KI-Trainingsverfahren können später auf derselben Schnittstelle aufbauen.
+
+> **Noch kein ausführbarer Match-Controller:** Kommandozeilenbeispiele im Pflichtenheft sind Entwürfe und noch nicht implementiert.
