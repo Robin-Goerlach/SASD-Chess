@@ -516,6 +516,7 @@ Bei jeder Etappe müssen alle betroffenen Tests grün, Dokumentation und Archite
 ## 16. Referenzen und dokumentierte Schnittstellen
 
 - Fachliche Anforderungen: [Lastenheft](Lastenheft.md).
+- Technische Gesamtsicht und Architekturentscheidungen: [Architektur.md](Architektur.md) (ARCH-001, v0.1).
 - UCI-Protokoll (historische Normfassung): https://backscattering.de/chess/uci/
 - Internationale Schachregeln: FIDE Laws of Chess (maßgeblicher Regelstand vor Freigabe der 1.0 dokumentieren).
 - FEN/PGN/SAN: übliche Standards und unabhängig überprüfte Referenzbeispiele.
